@@ -6,7 +6,6 @@ import {
   Play,
   Video,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import {
   Badge,
   Card,
@@ -16,8 +15,9 @@ import {
   Select,
   StatCard,
 } from "../../components/elements";
-import { cn, formatDate } from "../../utils/helpers";
-import { mediaItems, type MediaItem, type MediaType } from "./mediaData";
+import { formatDate } from "../../utils/helpers";
+import { handleProjectImageError } from "../projects/projectsData";
+import { mediaItems, type MediaItem } from "./mediaData";
 import { projects } from "../projects/projectsData";
 
 const typeOptions = [
@@ -32,18 +32,6 @@ const projectOptions = [
   { label: "Portfolio", value: "Portfolio" },
   ...projects.map((p) => ({ label: p.name, value: p.name })),
 ];
-
-const typeIcon: Record<MediaType, LucideIcon> = {
-  Image: ImageIcon,
-  Video: Video,
-  Infographic: BarChart3,
-};
-
-const tileTone: Record<MediaType, string> = {
-  Image: "from-accent-blue/30 to-primary/20 text-primary",
-  Video: "from-accent-violet/30 to-accent-pink/20 text-accent-violet",
-  Infographic: "from-accent-teal/30 to-accent-amber/20 text-accent-teal",
-};
 
 function MediaPage() {
   const [type, setType] = useState(typeOptions[0]);
@@ -125,26 +113,30 @@ function MediaPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filtered.map((m) => {
-            const Icon = typeIcon[m.type];
-            return (
+          {filtered.map((m) => (
               <button
                 key={m.id}
                 onClick={() => setSelected(m)}
                 className="group overflow-hidden rounded-xl border border-border bg-surface text-left shadow-sm transition-shadow hover:border-primary/40 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
               >
-                <div
-                  className={cn(
-                    "relative flex aspect-video items-center justify-center bg-gradient-to-br",
-                    tileTone[m.type],
-                  )}
-                >
-                  <Icon className="h-9 w-9 opacity-70" />
+                <div className="relative aspect-video overflow-hidden bg-surface-muted">
+                  <img
+                    src={m.url}
+                    alt={m.title}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
+                    onError={handleProjectImageError}
+                  />
                   {m.type === "Video" && (
-                    <span className="absolute inset-0 flex items-center justify-center">
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/20">
                       <span className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-transform group-hover:scale-110">
                         <Play className="h-5 w-5 translate-x-0.5" />
                       </span>
+                    </span>
+                  )}
+                  {m.type === "Infographic" && (
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <BarChart3 className="h-10 w-10 text-white/80" />
                     </span>
                   )}
                   <span className="absolute right-2 top-2">
@@ -160,8 +152,7 @@ function MediaPage() {
                   </p>
                 </div>
               </button>
-            );
-          })}
+            ))}
         </div>
       )}
 
@@ -173,19 +164,16 @@ function MediaPage() {
       >
         {selected && (
           <div className="flex flex-col gap-4">
-            <div
-              className={cn(
-                "relative flex aspect-video items-center justify-center rounded-lg bg-gradient-to-br",
-                tileTone[selected.type],
-              )}
-            >
-              {(() => {
-                const Icon = typeIcon[selected.type];
-                return <Icon className="h-14 w-14 opacity-70" />;
-              })()}
+            <div className="relative overflow-hidden rounded-lg bg-surface-muted">
+              <img
+                src={selected.url.replace(/w=\d+/, "w=1200")}
+                alt={selected.title}
+                className="max-h-[60vh] w-full object-contain"
+                onError={handleProjectImageError}
+              />
               {selected.type === "Video" && (
-                <span className="absolute inset-0 flex items-center justify-center">
-                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm">
+                <span className="absolute inset-0 flex items-center justify-center bg-black/30">
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm">
                     <Play className="h-6 w-6 translate-x-0.5" />
                   </span>
                 </span>
@@ -197,9 +185,11 @@ function MediaPage() {
               <Field label="Project">{selected.project}</Field>
               <Field label="Date">{formatDate(selected.date)}</Field>
             </dl>
-            <p className="text-xs text-muted-foreground">
-              Preview is illustrative for this demo.
-            </p>
+            {selected.type === "Video" && (
+              <p className="text-xs text-muted-foreground">
+                Video playback is illustrative for this demo.
+              </p>
+            )}
           </div>
         )}
       </Modal>

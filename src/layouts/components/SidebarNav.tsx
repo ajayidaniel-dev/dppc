@@ -24,7 +24,7 @@ function SidebarNav({ onNavigate }: SidebarNavProps) {
   };
 
   const [openSection, setOpenSection] = useState<string | null>(() =>
-    sectionForPath(pathname),
+    sectionForPath(pathname)
   );
 
   useEffect(() => {
@@ -41,7 +41,7 @@ function SidebarNav({ onNavigate }: SidebarNavProps) {
       nested && "py-2",
       isActive
         ? "bg-primary-soft text-primary"
-        : "text-muted-foreground hover:bg-surface-muted hover:text-foreground",
+        : "text-muted-foreground hover:bg-surface-muted hover:text-foreground"
     );
 
   return (
@@ -71,7 +71,7 @@ function SidebarNav({ onNavigate }: SidebarNavProps) {
         const GroupIcon = section.icon;
         const expanded = openSection === section.label;
         const hasActive = section.items.some((i) =>
-          isPathActive(pathname, i.path),
+          isPathActive(pathname, i.path)
         );
 
         return (
@@ -84,7 +84,7 @@ function SidebarNav({ onNavigate }: SidebarNavProps) {
                 "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
                 hasActive && !expanded
                   ? "text-foreground"
-                  : "text-muted-foreground hover:bg-surface-muted hover:text-foreground",
+                  : "text-muted-foreground hover:bg-surface-muted hover:text-foreground"
               )}
             >
               {GroupIcon && <GroupIcon className="h-5 w-5 shrink-0" />}
@@ -95,7 +95,7 @@ function SidebarNav({ onNavigate }: SidebarNavProps) {
               <ChevronDown
                 className={cn(
                   "h-4 w-4 shrink-0 transition-transform",
-                  expanded && "rotate-180",
+                  expanded && "rotate-180"
                 )}
               />
             </button>

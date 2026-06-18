@@ -44,7 +44,7 @@ function Footer({ onNavigate }: { onNavigate?: () => void }) {
             "mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
             isActive
               ? "bg-primary-soft text-primary"
-              : "text-muted-foreground hover:bg-surface-muted hover:text-foreground",
+              : "text-muted-foreground hover:bg-surface-muted hover:text-foreground"
           )
         }
       >

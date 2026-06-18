@@ -8,7 +8,7 @@ import {
   Modal,
   Select,
 } from "../../components/elements";
-import { PROJECT_PHASES, type Project } from "./projectsData";
+import { PROJECT_PHASES, projectImage, VERIFIED_PHOTOS, type Project } from "./projectsData";
 import type { Status } from "../../utils/types";
 
 interface ProjectFormModalProps {
@@ -129,6 +129,8 @@ function ProjectFormModal({
       strategicObjective: objective.trim() || "—",
       businessDriver: "—",
       expectedBenefits: "—",
+      coverImage: projectImage(VERIFIED_PHOTOS.office),
+      media: [],
       milestones: [],
       risks: [],
       team: manager.trim()

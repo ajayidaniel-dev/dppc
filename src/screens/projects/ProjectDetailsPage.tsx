@@ -4,7 +4,9 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  Images,
   Pencil,
+  Play,
   ShieldAlert,
 } from "lucide-react";
 import {
@@ -23,6 +25,7 @@ import {
   Button,
   Card,
   EmptyState,
+  Modal,
   ProgressBar,
   StatCard,
   StatusBadge,
@@ -37,8 +40,10 @@ import type { Status } from "../../utils/types";
 import {
   estimateAtCompletion,
   getProjectById,
+  handleProjectImageError,
   PROJECT_PHASES,
   type MilestoneStatus,
+  type ProjectMedia,
   type RiskSeverity,
 } from "./projectsData";
 
@@ -47,6 +52,7 @@ const tabs: TabItem[] = [
   { id: "milestones", label: "Milestones" },
   { id: "financials", label: "Financials" },
   { id: "risks", label: "Risks & Issues" },
+  { id: "media", label: "Media" },
   { id: "team", label: "Team" },
 ];
 
@@ -98,6 +104,7 @@ function ProjectDetailsPage() {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
+  const [selectedMedia, setSelectedMedia] = useState<ProjectMedia | null>(null);
   const project = getProjectById(projectId ?? "");
 
   if (!project) {
@@ -172,6 +179,23 @@ function ProjectDetailsPage() {
           >
             Edit project
           </Button>
+        </div>
+      </div>
+
+      <div className="relative overflow-hidden rounded-xl border border-border">
+        <img
+          src={project.coverImage}
+          alt={`${project.name} — site overview`}
+          className="h-44 w-full object-cover sm:h-52"
+          loading="eager"
+          onError={handleProjectImageError}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between gap-3 p-4">
+          <p className="text-sm text-white/90">{project.location}</p>
+          <span className="rounded-full bg-black/40 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
+            {project.media.length} media assets
+          </span>
         </div>
       </div>
 
@@ -522,6 +546,111 @@ function ProjectDetailsPage() {
           </div>
         </Card>
       )}
+
+      {activeTab === "media" && (
+        <div className="flex flex-col gap-4">
+          {project.media.length === 0 ? (
+            <Card>
+              <EmptyState
+                icon={Images}
+                title="No media yet"
+                description="Photos and videos from the field will appear here."
+              />
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {project.media.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setSelectedMedia(item)}
+                  className="group overflow-hidden rounded-xl border border-border bg-surface text-left shadow-sm transition-shadow hover:border-primary/40 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                >
+                  <div className="relative aspect-video overflow-hidden bg-surface-muted">
+                    <img
+                      src={item.url}
+                      alt={item.title}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                      onError={handleProjectImageError}
+                    />
+                    {item.type === "Video" && (
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-transform group-hover:scale-110">
+                          <Play className="h-5 w-5 translate-x-0.5" />
+                        </span>
+                      </span>
+                    )}
+                    <span className="absolute left-2 top-2">
+                      <Badge variant="neutral">{item.category}</Badge>
+                    </span>
+                  </div>
+                  <div className="p-3">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {item.title}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {item.type} · {formatDate(item.date)}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <Modal
+        isOpen={!!selectedMedia}
+        onClose={() => setSelectedMedia(null)}
+        title={selectedMedia?.title}
+        size="lg"
+      >
+        {selectedMedia && (
+          <div className="flex flex-col gap-4">
+            <div className="relative overflow-hidden rounded-lg bg-surface-muted">
+              <img
+                src={selectedMedia.url.replace(/w=\d+/, "w=1200")}
+                alt={selectedMedia.title}
+                className="max-h-[60vh] w-full object-contain"
+                onError={handleProjectImageError}
+              />
+              {selectedMedia.type === "Video" && (
+                <span className="absolute inset-0 flex items-center justify-center bg-black/30">
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm">
+                    <Play className="h-6 w-6 translate-x-0.5" />
+                  </span>
+                </span>
+              )}
+            </div>
+            <dl className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <dt className="text-muted-foreground">Type</dt>
+                <dd className="font-medium text-foreground">
+                  {selectedMedia.type}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Category</dt>
+                <dd className="font-medium text-foreground">
+                  {selectedMedia.category}
+                </dd>
+              </div>
+              <div className="col-span-2">
+                <dt className="text-muted-foreground">Captured</dt>
+                <dd className="font-medium text-foreground">
+                  {formatDate(selectedMedia.date)}
+                </dd>
+              </div>
+            </dl>
+            {selectedMedia.type === "Video" && (
+              <p className="text-xs text-muted-foreground">
+                Video playback is illustrative for this demo.
+              </p>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
