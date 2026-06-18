@@ -14,27 +14,26 @@ const isPathActive = (pathname: string, path: string) =>
 function SidebarNav({ onNavigate }: SidebarNavProps) {
   const { pathname } = useLocation();
 
-  const [open, setOpen] = useState<Record<string, boolean>>(() => {
-    const init: Record<string, boolean> = {};
-    navSections.forEach((s) => {
-      if (s.label) {
-        init[s.label] = s.items.some((i) => isPathActive(pathname, i.path));
+  const sectionForPath = (path: string): string | null => {
+    for (const s of navSections) {
+      if (s.label && s.items.some((i) => isPathActive(path, i.path))) {
+        return s.label;
       }
-    });
-    return init;
-  });
+    }
+    return null;
+  };
+
+  const [openSection, setOpenSection] = useState<string | null>(() =>
+    sectionForPath(pathname),
+  );
 
   useEffect(() => {
-    setOpen((prev) => {
-      const next = { ...prev };
-      navSections.forEach((s) => {
-        if (s.label && s.items.some((i) => isPathActive(pathname, i.path))) {
-          next[s.label] = true;
-        }
-      });
-      return next;
-    });
+    setOpenSection(sectionForPath(pathname));
   }, [pathname]);
+
+  const toggleSection = (label: string) => {
+    setOpenSection((current) => (current === label ? null : label));
+  };
 
   const linkClass = (isActive: boolean, nested = false) =>
     cn(
@@ -70,7 +69,7 @@ function SidebarNav({ onNavigate }: SidebarNavProps) {
         }
 
         const GroupIcon = section.icon;
-        const expanded = open[section.label] ?? false;
+        const expanded = openSection === section.label;
         const hasActive = section.items.some((i) =>
           isPathActive(pathname, i.path),
         );
@@ -79,12 +78,7 @@ function SidebarNav({ onNavigate }: SidebarNavProps) {
           <div key={section.label} className={cn(idx > 0 && "mt-1")}>
             <button
               type="button"
-              onClick={() =>
-                setOpen((prev) => ({
-                  ...prev,
-                  [section.label as string]: !expanded,
-                }))
-              }
+              onClick={() => toggleSection(section.label as string)}
               aria-expanded={expanded}
               className={cn(
                 "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",

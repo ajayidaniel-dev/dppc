@@ -174,6 +174,10 @@ const frequencyOptions = [
   { label: "Annual", value: "Annual" },
 ];
 
+/** Options for the generate-report modal (excludes "All" filters). */
+const generateCategoryOptions = categoryOptions.slice(1);
+const generateFrequencyOptions = frequencyOptions.slice(1);
+
 const categoryVariant: Record<Category, BadgeVariant> = {
   Executive: "primary",
   Board: "info",
@@ -203,8 +207,14 @@ function ReportsPage() {
   const [frequency, setFrequency] = useState(frequencyOptions[0]);
   const [exportTarget, setExportTarget] = useState<Report | null>(null);
   const [generateOpen, setGenerateOpen] = useState(false);
-  const [genCategory, setGenCategory] = useState(categoryOptions[1]);
-  const [genFrequency, setGenFrequency] = useState(frequencyOptions[1]);
+  const [genCategory, setGenCategory] = useState(generateCategoryOptions[0]);
+  const [genFrequency, setGenFrequency] = useState(generateFrequencyOptions[0]);
+
+  const openGenerateModal = () => {
+    setGenCategory(generateCategoryOptions[0]);
+    setGenFrequency(generateFrequencyOptions[0]);
+    setGenerateOpen(true);
+  };
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -240,7 +250,7 @@ function ReportsPage() {
         action={
           <Button
             leftIcon={<Plus className="h-4 w-4" />}
-            onClick={() => setGenerateOpen(true)}
+            onClick={openGenerateModal}
           >
             Generate report
           </Button>
@@ -502,7 +512,7 @@ function ReportsPage() {
                 Category
               </label>
               <Select
-                options={categoryOptions.slice(1)}
+                options={generateCategoryOptions}
                 value={genCategory}
                 onChange={(opt) => opt && setGenCategory(opt)}
                 isSearchable={false}
@@ -514,7 +524,7 @@ function ReportsPage() {
                 Frequency
               </label>
               <Select
-                options={frequencyOptions.slice(1)}
+                options={generateFrequencyOptions}
                 value={genFrequency}
                 onChange={(opt) => opt && setGenFrequency(opt)}
                 isSearchable={false}
