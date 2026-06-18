@@ -1,0 +1,49 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Internal project & spec docs (not shipped with the demo)
+PRODUCT.md
+PROJECT_OVERVIEW.md
+PROJECT_ROAD_MAP.md
+PROJECT_SETUP_GUIDE.md
+*.plan.md
+NOTES.md
+TODO.md
+
+# Local AI / editor tooling
+.cursor/
+.agents/
+.aider*
+.history/
+
+# Test & misc artifacts
+coverage
+.cache
+*.tsbuildinfo

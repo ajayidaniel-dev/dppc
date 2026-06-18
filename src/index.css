@@ -1,0 +1,116 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
+
+@import "tailwindcss";
+
+/* Class-based dark mode: toggled by adding `.dark` on <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------------------
+ * Fixed tokens — same value in both themes. Use only where a saturated,
+ * intentional color is wanted (charts, status, brand fills).
+ * ------------------------------------------------------------------------- */
+@theme {
+  /* Brightened green brand scale (primary). */
+  --color-primary-50: #ecfdf3;
+  --color-primary-100: #d1fadf;
+  --color-primary-200: #a6f4c5;
+  --color-primary-300: #6ce9a6;
+  --color-primary-400: #32d583;
+  --color-primary-500: #12b76a;
+  --color-primary-600: #039855;
+  --color-primary-700: #027a48;
+  --color-primary-800: #05603a;
+  --color-primary-900: #054f31;
+
+  /* Vivid data-viz / category accents. */
+  --color-accent-blue: #2e90fa;
+  --color-accent-violet: #875bf7;
+  --color-accent-teal: #15b6c2;
+  --color-accent-amber: #f79009;
+  --color-accent-pink: #ee46bc;
+
+  /* Status roles. Soft backgrounds are produced via /opacity in components. */
+  --color-success: #12b76a;
+  --color-warning: #f79009;
+  --color-danger: #f04438;
+  --color-info: #2e90fa;
+
+  --font-sans: "Geist", sans-serif;
+  --font-secondary: "Inter", sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+ * Semantic tokens — resolve to runtime CSS vars so utilities like bg-surface
+ * and text-foreground flip automatically between light and dark.
+ * ------------------------------------------------------------------------- */
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+}
+
+/* Light theme (default). Neutrals tinted slightly toward the green hue. */
+:root {
+  color-scheme: light;
+  --background: oklch(0.985 0.006 160);
+  --surface: oklch(0.997 0.004 160);
+  --surface-muted: oklch(0.965 0.008 160);
+  --foreground: oklch(0.27 0.03 160);
+  --muted-foreground: oklch(0.55 0.02 160);
+  --border: oklch(0.92 0.008 160);
+  --input: oklch(0.92 0.008 160);
+  --ring: oklch(0.72 0.17 158);
+  --primary: oklch(0.62 0.16 158);
+  --primary-foreground: oklch(0.99 0.01 160);
+  --primary-soft: oklch(0.95 0.04 160);
+}
+
+/* Dark theme. Deep green-charcoal canvas, brighter primary for contrast. */
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.21 0.02 165);
+  --surface: oklch(0.25 0.022 165);
+  --surface-muted: oklch(0.29 0.02 165);
+  --foreground: oklch(0.96 0.01 160);
+  --muted-foreground: oklch(0.72 0.02 160);
+  --border: oklch(0.34 0.02 165);
+  --input: oklch(0.34 0.02 165);
+  --ring: oklch(0.72 0.17 158);
+  --primary: oklch(0.72 0.17 158);
+  --primary-foreground: oklch(0.21 0.03 165);
+  --primary-soft: oklch(0.32 0.05 162);
+}
+
+body {
+  font-family: "Geist", sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
+
+/* Global scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted-foreground);
+}
