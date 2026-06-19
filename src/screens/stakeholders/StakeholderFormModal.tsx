@@ -10,8 +10,10 @@ import {
 } from "../../components/elements";
 import {
   engagementQuadrant,
+  STAKEHOLDER_CATEGORIES,
   type Level,
   type Stakeholder,
+  type StakeholderCategory,
   type StakeholderType,
 } from "./stakeholdersData";
 
@@ -25,6 +27,10 @@ const typeOptions: { label: string; value: StakeholderType }[] = [
   { label: "Internal", value: "Internal" },
   { label: "External", value: "External" },
 ];
+
+const categoryOptions: { label: string; value: StakeholderCategory }[] =
+  STAKEHOLDER_CATEGORIES.map((c) => ({ label: c, value: c }));
+
 const levelOptions: { label: string; value: Level }[] = [
   { label: "High", value: "High" },
   { label: "Low", value: "Low" },
@@ -57,11 +63,13 @@ function StakeholderFormModal({
   const [role, setRole] = useState("");
   const [organization, setOrganization] = useState("");
   const [type, setType] = useState(typeOptions[0]);
+  const [category, setCategory] = useState(categoryOptions[0]);
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [location, setLocation] = useState("");
   const [influence, setInfluence] = useState(levelOptions[0]);
   const [interest, setInterest] = useState(levelOptions[0]);
-  const [projectsText, setProjectsText] = useState("");
+  const [developmentsText, setDevelopmentsText] = useState("");
   const [responsibilities, setResponsibilities] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -70,11 +78,13 @@ function StakeholderFormModal({
     setRole("");
     setOrganization("");
     setType(typeOptions[0]);
+    setCategory(categoryOptions[0]);
     setEmail("");
     setPhone("");
+    setLocation("");
     setInfluence(levelOptions[0]);
     setInterest(levelOptions[0]);
-    setProjectsText("");
+    setDevelopmentsText("");
     setResponsibilities("");
     setErrors({});
   };
@@ -92,19 +102,24 @@ function StakeholderFormModal({
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
+    const developments = developmentsText
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+
     const stakeholder: Stakeholder = {
-      id: `s${Date.now()}`,
+      id: `STK-${Date.now()}`,
       name: name.trim(),
       role: role.trim(),
       organization: organization.trim() || "—",
       type: type.value,
+      category: category.value,
       email: email.trim(),
       phone: phone.trim() || "—",
+      location: location.trim() || undefined,
       responsibilities: responsibilities.trim() || "—",
-      projects: projectsText
-        .split(",")
-        .map((p) => p.trim())
-        .filter(Boolean),
+      developments: developments.length > 0 ? developments : ["Portfolio-wide"],
+      projectIds: [],
       influence: influence.value,
       interest: interest.value,
     };
@@ -143,21 +158,29 @@ function StakeholderFormModal({
           value={name}
           onChange={(e) => setName(e.target.value)}
           error={errors.name}
-          placeholder="e.g. Jordan Pike"
+          placeholder="e.g. Amara Bello"
         />
         <FormInput
           label="Role"
           value={role}
           onChange={(e) => setRole(e.target.value)}
           error={errors.role}
-          placeholder="e.g. Client Sponsor"
+          placeholder="e.g. Investor Relations Director"
         />
         <FormInput
           label="Organization"
           value={organization}
           onChange={(e) => setOrganization(e.target.value)}
-          placeholder="e.g. State Ministry of Works"
+          placeholder="e.g. Meridian Property Fund"
         />
+        <Field label="Category">
+          <Select
+            options={categoryOptions}
+            value={category}
+            onChange={(opt) => opt && setCategory(opt)}
+            isSearchable={false}
+          />
+        </Field>
         <Field label="Type">
           <Select
             options={typeOptions}
@@ -167,12 +190,18 @@ function StakeholderFormModal({
           />
         </Field>
         <FormInput
+          label="Location"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          placeholder="e.g. GRA Phase 2, Port Harcourt"
+        />
+        <FormInput
           label="Email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           error={errors.email}
-          placeholder="name@org.com"
+          placeholder="name@org.com.ng"
         />
         <FormInput
           label="Phone"
@@ -198,10 +227,10 @@ function StakeholderFormModal({
         </Field>
         <div className="sm:col-span-2">
           <FormInput
-            label="Related projects"
-            value={projectsText}
-            onChange={(e) => setProjectsText(e.target.value)}
-            placeholder="Comma-separated, e.g. Coastal Highway Phase II"
+            label="Related developments"
+            value={developmentsText}
+            onChange={(e) => setDevelopmentsText(e.target.value)}
+            placeholder="Comma-separated, e.g. Emerald Gardens Estate, Royal Crest Apartments"
           />
         </div>
         <div className="sm:col-span-2">
@@ -209,7 +238,7 @@ function StakeholderFormModal({
             label="Responsibilities"
             value={responsibilities}
             onChange={(e) => setResponsibilities(e.target.value)}
-            placeholder="What is this stakeholder accountable for?"
+            placeholder="What is this stakeholder accountable for on the development portfolio?"
           />
         </div>
         <p className="text-xs text-muted-foreground sm:col-span-2">

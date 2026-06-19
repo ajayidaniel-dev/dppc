@@ -22,7 +22,7 @@ function Brand() {
           DPPC
         </span>
         <span className="block text-[11px] text-muted-foreground">
-          Portfolio Command
+          Property Development
         </span>
       </div>
     </div>

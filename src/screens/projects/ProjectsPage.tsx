@@ -1,8 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createColumnHelper } from "@tanstack/react-table";
-import { Briefcase, CheckCircle2, Plus, Search, TriangleAlert, Wallet } from "lucide-react";
 import {
+  Briefcase,
+  CheckCircle2,
+  Plus,
+  Search,
+  TriangleAlert,
+  Wallet,
+} from "lucide-react";
+import moment from "moment";
+import {
+  Badge,
   Button,
   PageHeader,
   ProgressBar,
@@ -11,7 +20,11 @@ import {
   StatusBadge,
   Table,
 } from "../../components/elements";
-import { formatCurrency, formatDate } from "../../utils/helpers";
+import {
+  formatCompactCurrency,
+  formatCurrency,
+  formatDate,
+} from "../../utils/helpers";
 import { projectDetailsPath } from "../../router/routes";
 import { LIMIT } from "../../constants";
 import { projects, type Project } from "./projectsData";
@@ -25,12 +38,21 @@ const statusFilterOptions = [
   { label: "Critical", value: "red" },
 ];
 
+const developmentTypeOptions = [
+  { label: "All types", value: "all" },
+  { label: "Residential", value: "Residential" },
+  { label: "Commercial", value: "Commercial" },
+  { label: "Mixed-Use", value: "Mixed-Use" },
+  { label: "Infrastructure", value: "Infrastructure" },
+  { label: "Land Bank", value: "Land Bank" },
+];
+
 type SortKey = "name" | "progress" | "budget" | "endDate";
 const sortOptions: { label: string; value: SortKey }[] = [
   { label: "Name (A–Z)", value: "name" },
-  { label: "Progress (high→low)", value: "progress" },
-  { label: "Budget (high→low)", value: "budget" },
-  { label: "End date (soonest)", value: "endDate" },
+  { label: "Site progress (high→low)", value: "progress" },
+  { label: "Development cost (high→low)", value: "budget" },
+  { label: "Handover date (soonest)", value: "endDate" },
 ];
 
 const columnHelper = createColumnHelper<Project>();
@@ -40,6 +62,9 @@ function ProjectsPage() {
   const [projectList, setProjectList] = useState<Project[]>(projects);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState(statusFilterOptions[0]);
+  const [developmentType, setDevelopmentType] = useState(
+    developmentTypeOptions[0],
+  );
   const [sort, setSort] = useState(sortOptions[0]);
   const [currentPage, setCurrentPage] = useState(1);
   const [addOpen, setAddOpen] = useState(false);
@@ -48,22 +73,28 @@ function ProjectsPage() {
   const onTrack = projectList.filter((p) => p.status === "green").length;
   const needAttention = projectList.filter((p) => p.status !== "green").length;
 
+  const filtersActive =
+    status.value !== "all" || developmentType.value !== "all" || search.trim() !== "";
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, status, sort]);
+  }, [search, status, developmentType, sort]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const result = projectList.filter((p) => {
       const matchesQuery =
         !q ||
-        [p.name, p.code, p.manager, p.businessUnit]
+        [p.name, p.code, p.manager, p.businessUnit, p.location, p.phase]
           .join(" ")
           .toLowerCase()
           .includes(q);
       const matchesStatus =
         status.value === "all" || p.status === (status.value as Status);
-      return matchesQuery && matchesStatus;
+      const matchesType =
+        developmentType.value === "all" ||
+        p.businessUnit === developmentType.value;
+      return matchesQuery && matchesStatus && matchesType;
     });
 
     return [...result].sort((a, b) => {
@@ -78,7 +109,7 @@ function ProjectsPage() {
           return a.name.localeCompare(b.name);
       }
     });
-  }, [projectList, search, status, sort]);
+  }, [projectList, search, status, developmentType, sort]);
 
   const totalPage = Math.max(1, Math.ceil(filtered.length / LIMIT));
   const page = Math.min(currentPage, totalPage);
@@ -87,7 +118,7 @@ function ProjectsPage() {
   const columns = useMemo(
     () => [
       columnHelper.accessor("name", {
-        header: "Project",
+        header: "Development",
         meta: { wrap: true, maxWidth: "280px" },
         cell: (info) => (
           <div>
@@ -98,24 +129,31 @@ function ProjectsPage() {
           </div>
         ),
       }),
-      columnHelper.accessor("manager", { header: "Manager" }),
+      columnHelper.accessor("location", {
+        header: "Location",
+        meta: { wrap: true, maxWidth: "200px" },
+        cell: (info) => (
+          <span className="text-muted-foreground">{info.getValue()}</span>
+        ),
+      }),
+      columnHelper.accessor("manager", { header: "Project Manager" }),
       columnHelper.accessor("phase", {
-        header: "Phase",
+        header: "Construction Phase",
         cell: (info) => (
           <span className="text-muted-foreground">{info.getValue()}</span>
         ),
       }),
       columnHelper.accessor("budget", {
-        header: "Budget",
-        cell: (info) => formatCurrency(info.getValue()),
+        header: "Development Cost",
+        cell: (info) => formatCompactCurrency(info.getValue()),
         meta: { align: "right" },
       }),
       columnHelper.accessor("endDate", {
-        header: "End Date",
+        header: "Target Handover",
         cell: (info) => formatDate(info.getValue()),
       }),
       columnHelper.accessor("progress", {
-        header: "Progress",
+        header: "Site Progress",
         cell: (info) => (
           <ProgressBar value={info.getValue()} showLabel className="w-36" />
         ),
@@ -132,21 +170,21 @@ function ProjectsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Projects"
-        subtitle="All projects across the portfolio."
+        title="Development Projects"
+        subtitle="Active property developments across the portfolio · Port Harcourt & national sites"
         action={
           <Button
             leftIcon={<Plus className="h-4 w-4" />}
             onClick={() => setAddOpen(true)}
           >
-            New Project
+            New Development
           </Button>
         }
       />
 
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <StatCard
-          label="Total Projects"
+          label="Active Developments"
           value={projectList.length}
           icon={Briefcase}
           tone="primary"
@@ -164,25 +202,35 @@ function ProjectsPage() {
           tone="warning"
         />
         <StatCard
-          label="Total Budget"
-          value={formatCurrency(totalBudget)}
+          label="Total Development Cost"
+          value={formatCompactCurrency(totalBudget)}
           icon={Wallet}
           tone="info"
+          hint={formatCurrency(totalBudget)}
         />
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/30 sm:max-w-xs">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-1 items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/30 lg:max-w-sm">
           <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search name, code, manager…"
-            aria-label="Search projects"
+            placeholder="Search development, location, manager…"
+            aria-label="Search developments"
             className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
           />
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="w-40">
+            <Select
+              options={developmentTypeOptions}
+              value={developmentType}
+              onChange={(opt) => opt && setDevelopmentType(opt)}
+              isSearchable={false}
+              aria-label="Filter by development type"
+            />
+          </div>
           <div className="w-40">
             <Select
               options={statusFilterOptions}
@@ -192,27 +240,32 @@ function ProjectsPage() {
               aria-label="Filter by status"
             />
           </div>
-          <div className="w-52">
+          <div className="w-56">
             <Select
               options={sortOptions}
               value={sort}
               onChange={(opt) => opt && setSort(opt)}
               isSearchable={false}
-              aria-label="Sort projects"
+              aria-label="Sort developments"
             />
           </div>
+          {filtersActive && (
+            <Badge variant="info">
+              {filtered.length} of {projectList.length} shown
+            </Badge>
+          )}
         </div>
       </div>
 
       <p className="-mt-2 text-sm text-muted-foreground">
         Showing {pageData.length} of {filtered.length}{" "}
-        {filtered.length === 1 ? "project" : "projects"}
+        {filtered.length === 1 ? "development" : "developments"}
       </p>
 
       <Table<Project>
         columns={columns}
         data={pageData}
-        emptyMessage="No projects match your filters."
+        emptyMessage="No developments match your filters."
         onRowClick={(row) => navigate(projectDetailsPath(row.id))}
         currentPage={page}
         setCurrentPage={setCurrentPage}
@@ -220,6 +273,10 @@ function ProjectsPage() {
         count={filtered.length}
         limit={LIMIT}
       />
+
+      <p className="text-xs text-muted-foreground">
+        Source: PMO · Updated {moment().format("DD MMM YYYY")}
+      </p>
 
       <ProjectFormModal
         isOpen={addOpen}

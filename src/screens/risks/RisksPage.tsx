@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import moment from "moment";
+import { Link } from "react-router-dom";
 import { createColumnHelper } from "@tanstack/react-table";
 import {
   AlertOctagon,
@@ -34,12 +36,14 @@ import {
 } from "../../components/elements";
 import { chartPalette } from "../../constants";
 import { cn, formatDate } from "../../utils/helpers";
+import { projectDetailsPath } from "../../router/routes";
 import type { Status } from "../../utils/types";
 import {
   issues,
   LEVELS,
   risks,
   riskTrend,
+  RISK_CATEGORIES,
   severityLabel,
   severityZone,
   type Issue,
@@ -51,18 +55,13 @@ import RiskFormModal from "./RiskFormModal";
 import IssueFormModal from "./IssueFormModal";
 
 const tabs: TabItem[] = [
-  { id: "risks", label: "Risk Register" },
-  { id: "issues", label: "Issue Register" },
+  { id: "risks", label: "Site Risk Register" },
+  { id: "issues", label: "Site Issue Register" },
 ];
 
 const categoryOptions = [
   { label: "All categories", value: "all" },
-  { label: "Schedule", value: "Schedule" },
-  { label: "Budget", value: "Budget" },
-  { label: "Technical", value: "Technical" },
-  { label: "Resource", value: "Resource" },
-  { label: "Compliance", value: "Compliance" },
-  { label: "External", value: "External" },
+  ...RISK_CATEGORIES.map((c) => ({ label: c, value: c })),
 ];
 const severityOptions = [
   { label: "All severities", value: "all" },
@@ -114,9 +113,7 @@ const issueColumns = createColumnHelper<Issue>();
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </dt>
+      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
       <dd className="mt-1 text-sm text-foreground">{children}</dd>
     </div>
   );
@@ -155,7 +152,10 @@ function RisksPage() {
     return riskList.filter((r) => {
       const matchesQuery =
         !q ||
-        [r.id, r.title, r.owner, r.project].join(" ").toLowerCase().includes(q);
+        [r.id, r.title, r.owner, r.project, r.location]
+          .join(" ")
+          .toLowerCase()
+          .includes(q);
       const matchesCategory =
         category.value === "all" || r.category === category.value;
       const matchesSeverity =
@@ -170,7 +170,7 @@ function RisksPage() {
     return issueList.filter((i) => {
       const matchesQuery =
         !q ||
-        [i.id, i.description, i.owner, i.project]
+        [i.id, i.description, i.owner, i.project, i.location]
           .join(" ")
           .toLowerCase()
           .includes(q);
@@ -179,6 +179,12 @@ function RisksPage() {
       return matchesQuery && matchesStatus;
     });
   }, [issueList, search, issueStatus]);
+
+  const filtersActive =
+    search.trim() !== "" ||
+    (activeTab === "risks" &&
+      (category.value !== "all" || severity.value !== "all")) ||
+    (activeTab === "issues" && issueStatus.value !== "all");
 
   const riskCols = useMemo(
     () => [
@@ -191,6 +197,7 @@ function RisksPage() {
             <p className="font-medium text-foreground">{info.getValue()}</p>
             <p className="text-xs text-muted-foreground">
               {info.row.original.project}
+              <span className="ml-1.5">· {info.row.original.location}</span>
             </p>
           </div>
         ),
@@ -233,6 +240,7 @@ function RisksPage() {
             <p className="font-medium text-foreground">{info.getValue()}</p>
             <p className="text-xs text-muted-foreground">
               {info.row.original.project}
+              <span className="ml-1.5">· {info.row.original.location}</span>
             </p>
           </div>
         ),
@@ -261,8 +269,8 @@ function RisksPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Risks & Issues"
-        subtitle="Portfolio-wide risk register, issue tracking, and analytics."
+        title="Site Risks & Issues"
+        subtitle="Construction site risk register, issue tracking, and portfolio-wide analytics."
         action={
           <Button
             leftIcon={<Plus className="h-4 w-4" />}
@@ -272,26 +280,26 @@ function RisksPage() {
                 : setAddRiskOpen(true)
             }
           >
-            {activeTab === "issues" ? "Add issue" : "Add risk"}
+            {activeTab === "issues" ? "Raise site issue" : "Log site risk"}
           </Button>
         }
       />
 
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <StatCard
-          label="Open Risks"
+          label="Open Site Risks"
           value={activeRisks.length}
           icon={ShieldAlert}
           tone="primary"
         />
         <StatCard
-          label="Critical Risks"
+          label="Critical Site Risks"
           value={criticalCount}
           icon={AlertOctagon}
           tone="danger"
         />
         <StatCard
-          label="Open Issues"
+          label="Open Site Issues"
           value={openIssues.length}
           icon={TriangleAlert}
           tone="warning"
@@ -314,7 +322,7 @@ function RisksPage() {
               <AlertOctagon className="h-4 w-4" />
             </span>
             <h2 className="text-sm font-semibold text-foreground">
-              Escalated to leadership
+              Requires executive attention
             </h2>
             <Badge variant="danger">{escalations.length}</Badge>
           </div>
@@ -333,12 +341,12 @@ function RisksPage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-foreground">
                       {r.title}
-                      <span className="ml-2 text-xs font-normal text-muted-foreground">
-                        {r.id} · {r.project}
-                      </span>
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
-                      Owner: {r.owner} · Opened {formatDate(r.opened)}
+                      {r.project} · {r.location}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {r.id} · Owner: {r.owner} · Opened {formatDate(r.opened)}
                     </p>
                   </div>
                   <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
@@ -350,7 +358,7 @@ function RisksPage() {
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card title="Risk Heat Map">
+        <Card title="Site Risk Heat Map">
           <div className="flex gap-2">
             <div className="flex items-center">
               <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground [writing-mode:vertical-rl] rotate-180">
@@ -405,7 +413,7 @@ function RisksPage() {
         </Card>
 
         <ChartCard
-          title="Open Risk Trend"
+          title="Open Site Risk Trend"
           className="lg:col-span-2"
           height={260}
         >
@@ -450,42 +458,51 @@ function RisksPage() {
         </ChartCard>
       </div>
 
-      <div className="flex flex-col gap-4">
-        <Tabs tabs={tabs} value={activeTab} onChange={setActiveTab} />
+      <Tabs tabs={tabs} value={activeTab} onChange={setActiveTab} />
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-1 items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/30 sm:max-w-xs">
-            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by ID, title, owner…"
-              aria-label="Search"
-              className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-            />
-          </div>
-          {activeTab === "risks" ? (
-            <div className="flex items-center gap-3">
-              <div className="w-44">
-                <Select
-                  options={categoryOptions}
-                  value={category}
-                  onChange={(opt) => opt && setCategory(opt)}
-                  isSearchable={false}
-                  aria-label="Filter by category"
-                />
-              </div>
-              <div className="w-44">
-                <Select
-                  options={severityOptions}
-                  value={severity}
-                  onChange={(opt) => opt && setSeverity(opt)}
-                  isSearchable={false}
-                  aria-label="Filter by severity"
-                />
-              </div>
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-1 items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/30 lg:max-w-sm">
+          <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={
+              activeTab === "risks"
+                ? "Search risk, development, location…"
+                : "Search issue, development, location…"
+            }
+            aria-label="Search"
+            className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+          />
+        </div>
+        {activeTab === "risks" ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="w-48">
+              <Select
+                options={categoryOptions}
+                value={category}
+                onChange={(opt) => opt && setCategory(opt)}
+                isSearchable={false}
+                aria-label="Filter by category"
+              />
             </div>
-          ) : (
+            <div className="w-40">
+              <Select
+                options={severityOptions}
+                value={severity}
+                onChange={(opt) => opt && setSeverity(opt)}
+                isSearchable={false}
+                aria-label="Filter by severity"
+              />
+            </div>
+            {filtersActive && (
+              <Badge variant="info">
+                {filteredRisks.length} of {riskList.length} shown
+              </Badge>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-3">
             <div className="w-44">
               <Select
                 options={issueStatusOptions}
@@ -495,25 +512,30 @@ function RisksPage() {
                 aria-label="Filter by status"
               />
             </div>
-          )}
-        </div>
-
-        {activeTab === "risks" ? (
-          <Table<Risk>
-            columns={riskCols}
-            data={filteredRisks}
-            emptyMessage="No risks match your filters."
-            onRowClick={(row) => setSelectedRisk(row)}
-          />
-        ) : (
-          <Table<Issue>
-            columns={issueCols}
-            data={filteredIssues}
-            emptyMessage="No issues match your filters."
-            onRowClick={(row) => setSelectedIssue(row)}
-          />
+            {filtersActive && (
+              <Badge variant="info">
+                {filteredIssues.length} of {issueList.length} shown
+              </Badge>
+            )}
+          </div>
         )}
       </div>
+
+      {activeTab === "risks" ? (
+        <Table<Risk>
+          columns={riskCols}
+          data={filteredRisks}
+          emptyMessage="No site risks match your filters."
+          onRowClick={(row) => setSelectedRisk(row)}
+        />
+      ) : (
+        <Table<Issue>
+          columns={issueCols}
+          data={filteredIssues}
+          emptyMessage="No site issues match your filters."
+          onRowClick={(row) => setSelectedIssue(row)}
+        />
+      )}
 
       <Modal
         isOpen={!!selectedRisk}
@@ -541,7 +563,8 @@ function RisksPage() {
               />
             </div>
             <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-              <Field label="Project">{selectedRisk.project}</Field>
+              <Field label="Development">{selectedRisk.project}</Field>
+              <Field label="Location">{selectedRisk.location}</Field>
               <Field label="Category">{selectedRisk.category}</Field>
               <Field label="Owner">{selectedRisk.owner}</Field>
               <Field label="Probability">{selectedRisk.probability}</Field>
@@ -554,8 +577,18 @@ function RisksPage() {
               <Field label="Opened">{formatDate(selectedRisk.opened)}</Field>
             </dl>
             <div className="border-t border-border pt-4">
-              <Field label="Mitigation Plan">{selectedRisk.mitigation}</Field>
+              <Field label="Mitigation plan">{selectedRisk.mitigation}</Field>
             </div>
+            {selectedRisk.projectId > 0 && (
+              <div className="border-t border-border pt-4">
+                <Link
+                  to={projectDetailsPath(selectedRisk.projectId)}
+                  className="text-sm font-medium text-primary hover:text-primary-700"
+                >
+                  View development details →
+                </Link>
+              </div>
+            )}
           </div>
         )}
       </Modal>
@@ -572,7 +605,8 @@ function RisksPage() {
               {selectedIssue.description}
             </p>
             <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-              <Field label="Project">{selectedIssue.project}</Field>
+              <Field label="Development">{selectedIssue.project}</Field>
+              <Field label="Location">{selectedIssue.location}</Field>
               <Field label="Priority">
                 <Badge variant={priorityVariant[selectedIssue.priority]}>
                   {selectedIssue.priority}
@@ -587,8 +621,18 @@ function RisksPage() {
               <Field label="Raised">{formatDate(selectedIssue.raised)}</Field>
             </dl>
             <div className="border-t border-border pt-4">
-              <Field label="Resolution Plan">{selectedIssue.resolution}</Field>
+              <Field label="Resolution plan">{selectedIssue.resolution}</Field>
             </div>
+            {selectedIssue.projectId > 0 && (
+              <div className="border-t border-border pt-4">
+                <Link
+                  to={projectDetailsPath(selectedIssue.projectId)}
+                  className="text-sm font-medium text-primary hover:text-primary-700"
+                >
+                  View development details →
+                </Link>
+              </div>
+            )}
           </div>
         )}
       </Modal>
@@ -605,6 +649,10 @@ function RisksPage() {
         nextId={nextIssueId}
         onCreate={(issue) => setIssueList((prev) => [issue, ...prev])}
       />
+
+      <p className="text-xs text-muted-foreground">
+        Source: PMO · Updated {moment().format("DD MMM YYYY")}
+      </p>
     </div>
   );
 }

@@ -12,9 +12,9 @@ import { projects } from "../projects/projectsData";
 import {
   severityLabel,
   severityZone,
+  RISK_CATEGORIES,
   type Level,
   type Risk,
-  type RiskCategory,
   type RiskState,
 } from "./risksData";
 
@@ -26,9 +26,7 @@ interface RiskFormModalProps {
 }
 
 const projectOptions = projects.map((p) => ({ label: p.name, value: p.name }));
-const categoryOptions = (
-  ["Schedule", "Budget", "Technical", "Resource", "Compliance", "External"] as RiskCategory[]
-).map((c) => ({ label: c, value: c }));
+const categoryOptions = RISK_CATEGORIES.map((c) => ({ label: c, value: c }));
 const levelOptions = (["Low", "Medium", "High"] as Level[]).map((l) => ({
   label: l,
   value: l,
@@ -92,10 +90,14 @@ function RiskFormModal({ isOpen, onClose, onCreate, nextId }: RiskFormModalProps
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
+    const selected = projects.find((p) => p.name === project.value);
+
     const risk: Risk = {
       id: `RSK-${String(nextId).padStart(3, "0")}`,
       title: title.trim(),
       project: project.value,
+      projectId: selected?.id ?? 0,
+      location: selected?.location ?? "",
       category: category.value,
       probability: probability.value,
       impact: impact.value,
@@ -115,7 +117,7 @@ function RiskFormModal({ isOpen, onClose, onCreate, nextId }: RiskFormModalProps
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Log a risk"
+      title="Log a site risk"
       size="lg"
       footer={
         <>
@@ -138,7 +140,7 @@ function RiskFormModal({ isOpen, onClose, onCreate, nextId }: RiskFormModalProps
             placeholder="e.g. Vendor capacity shortfall"
           />
         </div>
-        <Field label="Project">
+        <Field label="Development">
           <Select
             options={projectOptions}
             value={project}

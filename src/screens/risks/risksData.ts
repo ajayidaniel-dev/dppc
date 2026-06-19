@@ -3,12 +3,21 @@ import type { Status } from "../../utils/types";
 export type Level = "Low" | "Medium" | "High";
 
 export type RiskCategory =
-  | "Schedule"
-  | "Budget"
-  | "Technical"
-  | "Resource"
-  | "Compliance"
-  | "External";
+  | "Construction Schedule"
+  | "Development Cost"
+  | "Site & Safety"
+  | "Contractor"
+  | "Regulatory"
+  | "Supply Chain";
+
+export const RISK_CATEGORIES: RiskCategory[] = [
+  "Construction Schedule",
+  "Development Cost",
+  "Site & Safety",
+  "Contractor",
+  "Regulatory",
+  "Supply Chain",
+];
 
 export type RiskState = "Open" | "Mitigating" | "Mitigated" | "Closed";
 
@@ -19,6 +28,8 @@ export interface Risk {
   id: string;
   title: string;
   project: string;
+  projectId: number;
+  location: string;
   category: RiskCategory;
   probability: Level;
   impact: Level;
@@ -33,6 +44,8 @@ export interface Issue {
   id: string;
   description: string;
   project: string;
+  projectId: number;
+  location: string;
   priority: Priority;
   status: IssueStatus;
   resolution: string;
@@ -60,119 +73,137 @@ export const severityLabel: Record<Status, string> = {
 export const risks: Risk[] = [
   {
     id: "RSK-001",
-    title: "Forecast budget overrun on Coastal Highway",
-    project: "Coastal Highway Phase II",
-    category: "Budget",
+    title: "Finishing stage development cost overrun",
+    project: "Emerald Gardens Estate",
+    projectId: 1,
+    location: "GRA Phase 2, Port Harcourt",
+    category: "Development Cost",
     probability: "High",
     impact: "High",
-    owner: "Stephen Okoro",
+    owner: "Amara Bello",
     mitigation:
-      "Re-baseline scope with client, negotiate fixed-price subcontracts, and stage non-critical works to next fiscal year.",
+      "Re-baseline finishing packages, negotiate fixed-price subcontracts, and defer non-critical landscaping to next phase.",
     state: "Open",
     opened: "2026-05-28",
     escalated: true,
   },
   {
     id: "RSK-002",
-    title: "Unmitigated high-severity risk on Harbor Terminal",
-    project: "Harbor Terminal Upgrade",
-    category: "External",
+    title: "Unmitigated high-severity site risk — Ada George",
+    project: "Royal Crest Apartments",
+    projectId: 6,
+    location: "Ada George, Port Harcourt",
+    category: "Site & Safety",
     probability: "High",
     impact: "High",
     owner: "Daniel Ajayi",
     mitigation:
-      "Secure alternate crane vendor and add penalty clauses; escalate to steering committee for funding decision.",
+      "Engage third-party HSE audit, implement daily toolbox talks, and pause works on affected zone until remediation sign-off.",
     state: "Open",
     opened: "2026-05-26",
     escalated: true,
   },
   {
     id: "RSK-003",
-    title: "ERP data migration quality gaps",
-    project: "ERP Migration",
-    category: "Technical",
+    title: "Roofing stage schedule slip — rainy season",
+    project: "Atlantic View Residences",
+    projectId: 3,
+    location: "Trans Amadi, Port Harcourt",
+    category: "Construction Schedule",
     probability: "High",
     impact: "Medium",
-    owner: "Ireti Bankole",
+    owner: "Stephen Okoro",
     mitigation:
-      "Run automated reconciliation, add a parallel-run cycle, and freeze legacy edits before final cutover.",
+      "Front-load weather-sensitive roofing, add night-shift option, and pre-position drainage protection on Tower B.",
     state: "Mitigating",
     opened: "2026-04-12",
   },
   {
     id: "RSK-004",
-    title: "Rainy-season schedule slip on earthworks",
-    project: "Coastal Highway Phase II",
-    category: "Schedule",
+    title: "Site preparation delays — community access road",
+    project: "Greenfield Housing Scheme",
+    projectId: 2,
+    location: "Obio-Akpor, Port Harcourt",
+    category: "Construction Schedule",
     probability: "Medium",
     impact: "High",
-    owner: "Bola Adisa",
+    owner: "Tunde Okafor",
     mitigation:
-      "Front-load weather-sensitive activities and pre-position drainage to protect the critical path.",
+      "Coordinate with local authority on temporary access route and accelerate topsoil removal on alternate entry.",
     state: "Open",
     opened: "2026-05-02",
   },
   {
     id: "RSK-005",
-    title: "SSO integration complexity (Customer Portal)",
-    project: "Customer Portal Revamp",
-    category: "Technical",
+    title: "Steel price volatility affecting structural package",
+    project: "Riverside Commercial Complex",
+    projectId: 4,
+    location: "Woji, Port Harcourt",
+    category: "Supply Chain",
     probability: "Medium",
     impact: "Medium",
-    owner: "Chen Wei",
+    owner: "Lola Adeyemi",
     mitigation:
-      "Spike the identity provider integration early and engage vendor support for edge cases.",
+      "Lock in remaining steel orders at agreed rates and qualify a secondary supplier for long-lead sections.",
     state: "Mitigating",
     opened: "2026-03-20",
   },
   {
     id: "RSK-006",
-    title: "Change-management adoption (ERP)",
-    project: "ERP Migration",
-    category: "Resource",
+    title: "Contractor crew shortage — finishing trades",
+    project: "Woji Estate Extension",
+    projectId: 5,
+    location: "Woji, Port Harcourt",
+    category: "Contractor",
     probability: "Medium",
     impact: "Medium",
-    owner: "Kwame Mensah",
+    owner: "Maria Santos",
     mitigation:
-      "Roll out role-based training, identify champions per department, and track adoption metrics weekly.",
+      "Onboard secondary finishing subcontractor and stagger Block D internal works to protect handover date.",
     state: "Open",
     opened: "2026-04-30",
   },
   {
     id: "RSK-007",
-    title: "Grid interconnection permit delays",
-    project: "Solar Microgrid Rollout",
-    category: "Compliance",
+    title: "Environmental permit renewal delay",
+    project: "Atlantic View Residences",
+    projectId: 3,
+    location: "Trans Amadi, Port Harcourt",
+    category: "Regulatory",
     probability: "Low",
     impact: "Medium",
-    owner: "Yusuf Idris",
+    owner: "Stephen Okoro",
     mitigation:
-      "Submit applications in parallel and maintain a regulator liaison to expedite approvals.",
+      "Maintain regulator liaison and submit revised EIA documentation ahead of statutory deadline.",
     state: "Mitigated",
     opened: "2026-02-15",
   },
   {
     id: "RSK-008",
-    title: "Material lead times slipping (HQ fit-out)",
-    project: "Corporate HQ Renovation",
-    category: "Schedule",
+    title: "Imported finishing materials lead time",
+    project: "Emerald Gardens Estate",
+    projectId: 1,
+    location: "GRA Phase 2, Port Harcourt",
+    category: "Supply Chain",
     probability: "Medium",
     impact: "Low",
     owner: "Tunde Okafor",
     mitigation:
-      "Place long-lead orders early and qualify a secondary supplier for critical materials.",
+      "Place long-lead orders for tiles and sanitary ware; qualify local alternatives for non-premium units.",
     state: "Mitigating",
     opened: "2026-04-08",
   },
   {
     id: "RSK-009",
-    title: "Currency fluctuation on imported equipment",
-    project: "Solar Microgrid Rollout",
-    category: "External",
+    title: "FX exposure on crane procurement",
+    project: "Royal Crest Apartments",
+    projectId: 6,
+    location: "Ada George, Port Harcourt",
+    category: "Development Cost",
     probability: "Low",
     impact: "Low",
-    owner: "Finance",
-    mitigation: "Hedge FX exposure on confirmed purchase orders.",
+    owner: "Grace Eze",
+    mitigation: "Hedge FX on confirmed plant hire and crane mobilisation contracts.",
     state: "Closed",
     opened: "2026-01-22",
   },
@@ -181,54 +212,66 @@ export const risks: Risk[] = [
 export const issues: Issue[] = [
   {
     id: "ISS-001",
-    description: "Interchange A design clash blocking earthworks",
-    project: "Coastal Highway Phase II",
+    description: "Tower B structural clash blocking roofing works",
+    project: "Atlantic View Residences",
+    projectId: 3,
+    location: "Trans Amadi, Port Harcourt",
     priority: "Critical",
     status: "Open",
     resolution:
-      "Coordinate clash-detection workshop with design and survey teams; issue revised IFC drawings.",
+      "Coordinate clash-detection workshop with structural engineer and issue revised IFC drawings before resuming roofing.",
     owner: "Bola Adisa",
     raised: "2026-06-02",
   },
   {
     id: "ISS-002",
-    description: "Finance go-live defects in tax reporting",
-    project: "ERP Migration",
+    description: "Substation capacity shortfall for Block A handover",
+    project: "Emerald Gardens Estate",
+    projectId: 1,
+    location: "GRA Phase 2, Port Harcourt",
     priority: "High",
     status: "In Progress",
     resolution:
-      "Patch tax configuration, retest reporting pack, and validate with finance before sign-off.",
-    owner: "Ireti Bankole",
+      "Expedite transformer procurement and schedule DISCO inspection for provisional energisation.",
+    owner: "Tunde Okafor",
     raised: "2026-05-18",
   },
   {
     id: "ISS-003",
-    description: "Beta portal performance under load",
-    project: "Customer Portal Revamp",
+    description: "Estate road resurfacing blocking resident access",
+    project: "Woji Estate Extension",
+    projectId: 5,
+    location: "Woji, Port Harcourt",
     priority: "Medium",
     status: "In Progress",
     resolution:
-      "Profile slow endpoints, add caching, and scale the staging environment for load tests.",
-    owner: "Chen Wei",
+      "Implement phased road closure with signed diversion routes and communicate schedule to Phase 1 residents.",
+    owner: "Maria Santos",
     raised: "2026-05-25",
   },
   {
     id: "ISS-004",
-    description: "Pilot site inverter firmware mismatch",
-    project: "Solar Microgrid Rollout",
+    description: "Concrete test failure — Level 8 slab",
+    project: "Riverside Commercial Complex",
+    projectId: 4,
+    location: "Woji, Port Harcourt",
     priority: "Medium",
     status: "Resolved",
-    resolution: "Standardized firmware version across units and updated commissioning checklist.",
+    resolution:
+      "Core test confirmed isolated batch issue; remedial grouting completed and QA sign-off obtained.",
     owner: "Yusuf Idris",
     raised: "2026-03-30",
   },
   {
     id: "ISS-005",
-    description: "Furniture delivery shortfall on floor 3",
-    project: "Corporate HQ Renovation",
-    priority: "Low",
+    description: "Land compensation dispute — Obio-Akpor boundary",
+    project: "Greenfield Housing Scheme",
+    projectId: 2,
+    location: "Obio-Akpor, Port Harcourt",
+    priority: "High",
     status: "Open",
-    resolution: "Confirm revised delivery schedule with vendor and resequence floor handovers.",
+    resolution:
+      "Engage community liaison and legal team to finalize compensation schedule before earthworks resume.",
     owner: "Tunde Okafor",
     raised: "2026-06-05",
   },

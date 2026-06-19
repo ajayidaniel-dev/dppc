@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import moment from "moment";
 import {
+  Badge,
   Card,
   ChartCard,
   PageHeader,
@@ -34,137 +35,34 @@ import {
   StatusBadge,
   Table,
 } from "../../components/elements";
-import { formatCurrency, cn } from "../../utils/helpers";
+import {
+  cn,
+  formatCompactCurrency,
+} from "../../utils/helpers";
 import { chartPalette } from "../../constants";
 import { routes } from "../../router/routes";
 import type { Status } from "../../utils/types";
+import {
+  allocationByType,
+  allocationTotal,
+  byState,
+  cellLabel,
+  cellTone,
+  developmentTypeOptions,
+  filterSegments,
+  heatDimensions,
+  heatmap,
+  isFiltered,
+  phaseOptions,
+  portfolioStats,
+  segmentPerformance,
+  stateOptions,
+  statusOptions,
+  valueTrend,
+  type SegmentRow,
+} from "./portfolioData";
 
-const filterOption = (label: string) => ({ label, value: label.toLowerCase() });
-
-const businessUnitOptions = [
-  filterOption("All business units"),
-  filterOption("Engineering"),
-  filterOption("IT"),
-  filterOption("Operations"),
-  filterOption("Facilities"),
-  filterOption("R&D"),
-];
-const regionOptions = [
-  filterOption("All regions"),
-  filterOption("North"),
-  filterOption("South"),
-  filterOption("EMEA"),
-  filterOption("APAC"),
-];
-const statusOptions = [
-  filterOption("All statuses"),
-  filterOption("On Track"),
-  filterOption("Attention"),
-  filterOption("Critical"),
-];
-const departmentOptions = [
-  filterOption("All departments"),
-  filterOption("Delivery"),
-  filterOption("Technology"),
-  filterOption("Commercial"),
-  filterOption("Corporate Services"),
-];
-const projectTypeOptions = [
-  filterOption("All types"),
-  filterOption("Capital"),
-  filterOption("Transformation"),
-  filterOption("Maintenance"),
-  filterOption("Strategic"),
-];
-const sponsorOptions = [
-  filterOption("All sponsors"),
-  filterOption("Office of the CFO"),
-  filterOption("Infrastructure Division"),
-  filterOption("Energy Division"),
-  filterOption("Digital Experience"),
-  filterOption("Maritime Division"),
-];
-
-const valueTrend = [
-  { month: "Jan", value: 42.1 },
-  { month: "Feb", value: 43.6 },
-  { month: "Mar", value: 44.9 },
-  { month: "Apr", value: 46.2 },
-  { month: "May", value: 47.1 },
-  { month: "Jun", value: 48.2 },
-];
-
-const byBusinessUnit = [
-  { name: "Engineering", value: 12 },
-  { name: "IT", value: 8 },
-  { name: "Operations", value: 6 },
-  { name: "Facilities", value: 4 },
-  { name: "R&D", value: 3 },
-];
-
-const allocation = [
-  { name: "Engineering", value: 14.2 },
-  { name: "IT", value: 9.8 },
-  { name: "Operations", value: 7.5 },
-  { name: "Facilities", value: 4.1 },
-  { name: "R&D", value: 3.9 },
-];
-const allocationTotal = allocation.reduce((sum, a) => sum + a.value, 0);
-
-const heatDimensions = ["Schedule", "Budget", "Scope", "Risk"] as const;
-type HeatDimension = (typeof heatDimensions)[number];
-
-const heatmap: { unit: string; values: Record<HeatDimension, Status> }[] = [
-  {
-    unit: "Engineering",
-    values: { Schedule: "green", Budget: "amber", Scope: "green", Risk: "green" },
-  },
-  {
-    unit: "IT",
-    values: { Schedule: "green", Budget: "green", Scope: "amber", Risk: "amber" },
-  },
-  {
-    unit: "Operations",
-    values: { Schedule: "amber", Budget: "red", Scope: "amber", Risk: "red" },
-  },
-  {
-    unit: "Facilities",
-    values: { Schedule: "green", Budget: "green", Scope: "green", Risk: "green" },
-  },
-  {
-    unit: "R&D",
-    values: { Schedule: "amber", Budget: "green", Scope: "green", Risk: "amber" },
-  },
-];
-
-const cellTone: Record<Status, string> = {
-  green: "bg-success/15 text-success",
-  amber: "bg-warning/15 text-warning",
-  red: "bg-danger/15 text-danger",
-};
-const cellLabel: Record<Status, string> = {
-  green: "Good",
-  amber: "Watch",
-  red: "At risk",
-};
-
-interface UnitRow {
-  id: string;
-  unit: string;
-  projects: number;
-  value: number;
-  budgetUsed: number;
-  performance: number;
-  status: Status;
-}
-
-const unitPerformance: UnitRow[] = [
-  { id: "eng", unit: "Engineering", projects: 12, value: 14.2, budgetUsed: 88, performance: 1.02, status: "green" },
-  { id: "it", unit: "IT", projects: 8, value: 9.8, budgetUsed: 74, performance: 0.97, status: "amber" },
-  { id: "ops", unit: "Operations", projects: 6, value: 7.5, budgetUsed: 91, performance: 0.94, status: "red" },
-  { id: "fac", unit: "Facilities", projects: 4, value: 4.1, budgetUsed: 63, performance: 1.05, status: "green" },
-  { id: "rnd", unit: "R&D", projects: 3, value: 3.9, budgetUsed: 80, performance: 0.99, status: "amber" },
-];
+const BILLION = 1_000_000_000;
 
 const tooltipStyle = {
   background: "var(--color-surface)",
@@ -173,22 +71,27 @@ const tooltipStyle = {
   color: "var(--color-foreground)",
 };
 
-const unitColumns: ColumnDef<UnitRow, any>[] = [
+const segmentColumns: ColumnDef<SegmentRow, unknown>[] = [
   {
-    accessorKey: "unit",
-    header: "Business Unit",
+    accessorKey: "segment",
+    header: "Development Segment",
     cell: (info) => (
       <span className="font-medium text-foreground">
         {info.getValue() as string}
       </span>
     ),
   },
-  { accessorKey: "projects", header: "Projects", meta: { align: "right" } },
+  {
+    accessorKey: "developments",
+    header: "Developments",
+    meta: { align: "right" },
+  },
   {
     accessorKey: "value",
-    header: "Value",
+    header: "Portfolio Value",
     meta: { align: "right" },
-    cell: (info) => formatCurrency((info.getValue() as number) * 1_000_000),
+    cell: (info) =>
+      formatCompactCurrency((info.getValue() as number) * BILLION),
   },
   {
     id: "budgetUsed",
@@ -199,7 +102,7 @@ const unitColumns: ColumnDef<UnitRow, any>[] = [
     ),
   },
   {
-    accessorKey: "performance",
+    accessorKey: "cpi",
     header: "CPI",
     meta: { align: "right" },
     cell: (info) => {
@@ -226,18 +129,41 @@ const unitColumns: ColumnDef<UnitRow, any>[] = [
 
 function PortfolioPage() {
   const navigate = useNavigate();
-  const [businessUnit, setBusinessUnit] = useState(businessUnitOptions[0]);
-  const [region, setRegion] = useState(regionOptions[0]);
+  const [developmentType, setDevelopmentType] = useState(
+    developmentTypeOptions[0],
+  );
+  const [state, setState] = useState(stateOptions[0]);
+  const [phase, setPhase] = useState(phaseOptions[0]);
   const [status, setStatus] = useState(statusOptions[0]);
-  const [department, setDepartment] = useState(departmentOptions[0]);
-  const [projectType, setProjectType] = useState(projectTypeOptions[0]);
-  const [sponsor, setSponsor] = useState(sponsorOptions[0]);
+
+  const filters = useMemo(
+    () => ({
+      developmentType: developmentType.value,
+      state: state.value,
+      phase: phase.value,
+      status: status.value,
+    }),
+    [developmentType, state, phase, status],
+  );
+
+  const filteredSegments = useMemo(
+    () => filterSegments(segmentPerformance, filters),
+    [filters],
+  );
+
+  const filtersActive = isFiltered(filters);
+
+  const filteredDevelopments = filteredSegments.reduce(
+    (sum, s) => sum + s.developments,
+    0,
+  );
+  const filteredValue = filteredSegments.reduce((sum, s) => sum + s.value, 0);
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Portfolio Overview"
-        subtitle={`Portfolio-wide visibility across all active projects · as of ${moment().format("DD MMM YYYY")}`}
+        title="Development Portfolio"
+        subtitle={`Portfolio-wide visibility across active developments · Nigeria · as of ${moment().format("DD MMM YYYY")}`}
       />
 
       <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 shadow-sm">
@@ -247,20 +173,29 @@ function PortfolioPage() {
         </span>
         <div className="w-48">
           <Select
-            options={businessUnitOptions}
-            value={businessUnit}
-            onChange={(opt) => opt && setBusinessUnit(opt)}
+            options={developmentTypeOptions}
+            value={developmentType}
+            onChange={(opt) => opt && setDevelopmentType(opt)}
             isSearchable={false}
-            aria-label="Filter by business unit"
+            aria-label="Filter by development type"
           />
         </div>
         <div className="w-40">
           <Select
-            options={regionOptions}
-            value={region}
-            onChange={(opt) => opt && setRegion(opt)}
+            options={stateOptions}
+            value={state}
+            onChange={(opt) => opt && setState(opt)}
             isSearchable={false}
-            aria-label="Filter by region"
+            aria-label="Filter by state"
+          />
+        </div>
+        <div className="w-48">
+          <Select
+            options={phaseOptions}
+            value={phase}
+            onChange={(opt) => opt && setPhase(opt)}
+            isSearchable={false}
+            aria-label="Filter by construction phase"
           />
         </div>
         <div className="w-44">
@@ -272,73 +207,54 @@ function PortfolioPage() {
             aria-label="Filter by status"
           />
         </div>
-        <div className="w-48">
-          <Select
-            options={departmentOptions}
-            value={department}
-            onChange={(opt) => opt && setDepartment(opt)}
-            isSearchable={false}
-            aria-label="Filter by department"
-          />
-        </div>
-        <div className="w-44">
-          <Select
-            options={projectTypeOptions}
-            value={projectType}
-            onChange={(opt) => opt && setProjectType(opt)}
-            isSearchable={false}
-            aria-label="Filter by project type"
-          />
-        </div>
-        <div className="w-52">
-          <Select
-            options={sponsorOptions}
-            value={sponsor}
-            onChange={(opt) => opt && setSponsor(opt)}
-            isSearchable={false}
-            aria-label="Filter by sponsor"
-          />
-        </div>
+        {filtersActive && (
+          <Badge variant="info">
+            {filteredSegments.length} segment
+            {filteredSegments.length !== 1 ? "s" : ""} ·{" "}
+            {filteredDevelopments} developments ·{" "}
+            {formatCompactCurrency(filteredValue * BILLION)}
+          </Badge>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <StatCard
           label="Total Portfolio Value"
-          value={formatCurrency(48_200_000)}
+          value={formatCompactCurrency(portfolioStats.totalValue)}
           icon={Wallet}
           tone="primary"
           trend={{ value: "+6.4% YoY", positive: true }}
           to={routes.PROJECTS}
         />
         <StatCard
-          label="Budget Allocation"
-          value={formatCurrency(31_500_000)}
+          label="Development Cost Committed"
+          value={formatCompactCurrency(portfolioStats.costCommitted)}
           icon={Banknote}
           tone="info"
-          hint="65% of total value"
+          hint={`${portfolioStats.costCommittedPct}% of portfolio value`}
           to={routes.PROJECTS}
         />
         <StatCard
-          label="Revenue Contribution"
-          value={formatCurrency(12_800_000)}
+          label="Property Sales Revenue"
+          value={formatCompactCurrency(portfolioStats.salesRevenue)}
           icon={TrendingUp}
           tone="success"
           trend={{ value: "+9.1% YTD", positive: true }}
           to={routes.REPORTS}
         />
         <StatCard
-          label="Performance Index"
-          value="0.98"
+          label="Cost Performance (CPI)"
+          value={portfolioStats.cpi.toFixed(2)}
           icon={Gauge}
           tone="warning"
-          hint="CPI · target ≥ 1.00"
+          hint="Target ≥ 1.00"
         />
         <StatCard
-          label="Risk Index"
-          value="Medium"
+          label="Site Risk Level"
+          value={portfolioStats.riskLevel}
           icon={ShieldAlert}
           tone="warning"
-          hint="3 critical risks open"
+          hint={`${portfolioStats.criticalRisks} critical site risks open`}
           to={routes.RISKS}
         />
       </div>
@@ -365,12 +281,15 @@ function PortfolioPage() {
               fontSize={12}
               stroke={chartPalette.axis}
               tickLine={false}
-              tickFormatter={(v) => `$${v}M`}
+              tickFormatter={(v) => formatCompactCurrency(v * BILLION)}
             />
             <Tooltip
               contentStyle={tooltipStyle}
               cursor={{ opacity: 0.1 }}
-              formatter={(v: number) => [`$${v}M`, "Value"]}
+              formatter={(v: number) => [
+                formatCompactCurrency(v * BILLION),
+                "Portfolio value",
+              ]}
             />
             <Area
               type="monotone"
@@ -383,32 +302,37 @@ function PortfolioPage() {
           </AreaChart>
         </ChartCard>
 
-        <Card title="Budget Allocation">
+        <Card title="Allocation by Development Type">
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie
-                data={allocation}
+                data={allocationByType}
                 dataKey="value"
                 nameKey="name"
                 innerRadius={58}
                 outerRadius={88}
                 paddingAngle={2}
               >
-                {allocation.map((entry, index) => (
+                {allocationByType.map((entry, index) => (
                   <Cell
                     key={entry.name}
-                    fill={chartPalette.series[index % chartPalette.series.length]}
+                    fill={
+                      chartPalette.series[index % chartPalette.series.length]
+                    }
                   />
                 ))}
               </Pie>
               <Tooltip
                 contentStyle={tooltipStyle}
-                formatter={(v: number) => [`$${v}M`, ""]}
+                formatter={(v: number) => [
+                  formatCompactCurrency(v * BILLION),
+                  "",
+                ]}
               />
             </PieChart>
           </ResponsiveContainer>
           <div className="mt-3 flex flex-col gap-2">
-            {allocation.map((item, index) => (
+            {allocationByType.map((item, index) => (
               <div
                 key={item.name}
                 className="flex items-center justify-between text-sm"
@@ -424,7 +348,9 @@ function PortfolioPage() {
                   {item.name}
                 </span>
                 <span className="text-foreground">
-                  <span className="font-medium">${item.value}M</span>
+                  <span className="font-medium">
+                    {formatCompactCurrency(item.value * BILLION)}
+                  </span>
                   <span className="ml-1.5 text-xs text-muted-foreground">
                     {Math.round((item.value / allocationTotal) * 100)}%
                   </span>
@@ -436,8 +362,8 @@ function PortfolioPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <ChartCard title="Projects by Business Unit" height={280}>
-          <BarChart data={byBusinessUnit}>
+        <ChartCard title="Developments by State" height={280}>
+          <BarChart data={byState}>
             <CartesianGrid
               strokeDasharray="3 3"
               vertical={false}
@@ -456,8 +382,8 @@ function PortfolioPage() {
               tickLine={false}
             />
             <Tooltip contentStyle={tooltipStyle} cursor={{ opacity: 0.1 }} />
-            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-              {byBusinessUnit.map((entry, index) => (
+            <Bar dataKey="value" name="Developments" radius={[4, 4, 0, 0]}>
+              {byState.map((entry, index) => (
                 <Cell
                   key={entry.name}
                   fill={chartPalette.series[index % chartPalette.series.length]}
@@ -467,13 +393,13 @@ function PortfolioPage() {
           </BarChart>
         </ChartCard>
 
-        <Card title="Health Matrix">
+        <Card title="Construction Health Matrix">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr>
                   <th className="px-2 py-2 text-left font-medium text-muted-foreground">
-                    Business Unit
+                    Development Type
                   </th>
                   {heatDimensions.map((dim) => (
                     <th
@@ -524,14 +450,26 @@ function PortfolioPage() {
       </div>
 
       <div className="flex flex-col gap-3">
-        <h2 className="text-base font-semibold text-foreground">
-          Business Unit Performance
-        </h2>
-        <Table<UnitRow>
-          columns={unitColumns}
-          data={unitPerformance}
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-base font-semibold text-foreground">
+            Segment Performance
+          </h2>
+          {filtersActive && (
+            <p className="text-xs text-muted-foreground">
+              Showing {filteredSegments.length} of {segmentPerformance.length}{" "}
+              segments
+            </p>
+          )}
+        </div>
+        <Table<SegmentRow>
+          columns={segmentColumns}
+          data={filteredSegments}
           onRowClick={() => navigate(routes.PROJECTS)}
+          emptyMessage="No segments match the current filters."
         />
+        <p className="text-xs text-muted-foreground">
+          Source: PMO · Updated {moment().format("DD MMM YYYY")}
+        </p>
       </div>
     </div>
   );

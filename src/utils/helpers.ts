@@ -19,14 +19,32 @@ export const formatDate = (
 
 export const formatCurrency = (
   value: number | undefined | null,
-  currency = "USD"
+  currency = "NGN"
 ): string => {
   if (value === undefined || value === null || Number.isNaN(value)) return "—";
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("en-NG", {
     style: "currency",
     currency,
     maximumFractionDigits: 0,
   }).format(value);
+};
+
+/** Compact axis/tooltip labels — e.g. ₦4.8B, ₦405M. */
+export const formatCompactCurrency = (
+  value: number,
+  currency = "NGN"
+): string => {
+  const abs = Math.abs(value);
+  const sign = value < 0 ? "−" : "";
+  const symbol = currency === "NGN" ? "₦" : currency === "USD" ? "$" : `${currency} `;
+
+  if (abs >= 1_000_000_000) {
+    return `${sign}${symbol}${(abs / 1_000_000_000).toFixed(1)}B`;
+  }
+  if (abs >= 1_000_000) {
+    return `${sign}${symbol}${(abs / 1_000_000).toFixed(1)}M`;
+  }
+  return formatCurrency(value, currency);
 };
 
 export const formatNumber = (value: number | undefined | null): string => {

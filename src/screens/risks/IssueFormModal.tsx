@@ -77,10 +77,14 @@ function IssueFormModal({
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
+    const selected = projects.find((p) => p.name === project.value);
+
     const issue: Issue = {
       id: `ISS-${String(nextId).padStart(3, "0")}`,
       description: description.trim(),
       project: project.value,
+      projectId: selected?.id ?? 0,
+      location: selected?.location ?? "",
       priority: priority.value,
       status: status.value,
       resolution: resolution.trim() || "—",
@@ -98,7 +102,7 @@ function IssueFormModal({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Raise an issue"
+      title="Raise a site issue"
       size="lg"
       footer={
         <>
@@ -121,7 +125,7 @@ function IssueFormModal({
             placeholder="e.g. Design clash blocking earthworks"
           />
         </div>
-        <Field label="Project">
+        <Field label="Development">
           <Select
             options={projectOptions}
             value={project}

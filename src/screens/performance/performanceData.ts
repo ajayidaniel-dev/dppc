@@ -6,7 +6,7 @@ export interface SchedulePoint {
   actual: number;
 }
 
-/** Cumulative portfolio planned vs actual progress (%). */
+/** Cumulative portfolio construction progress vs plan (%). */
 export const scheduleTrend: SchedulePoint[] = [
   { month: "Apr", planned: 12, actual: 11 },
   { month: "May", planned: 22, actual: 19 },
@@ -16,8 +16,9 @@ export const scheduleTrend: SchedulePoint[] = [
   { month: "Sep", planned: 64, actual: 54 },
 ];
 
-export interface BenefitRecord {
+export interface SalesRecord {
   project: string;
+  code: string;
   metric: string;
   plannedValue: number;
   realizedValue: number;
@@ -25,70 +26,77 @@ export interface BenefitRecord {
   status: "On Track" | "At Risk" | "Realized";
 }
 
-export const benefits: BenefitRecord[] = [
+/** Property sales and investment performance by development (NGN). */
+export const salesPerformance: SalesRecord[] = [
   {
-    project: "Corporate HQ Renovation",
-    metric: "Facility opex savings",
-    plannedValue: 430_000,
-    realizedValue: 290_000,
-    roi: 18,
+    project: "Emerald Gardens Estate",
+    code: "DEV-001",
+    metric: "Property sales revenue",
+    plannedValue: 18_000_000_000,
+    realizedValue: 12_600_000_000,
+    roi: 24,
     status: "On Track",
   },
   {
-    project: "ERP Migration",
-    metric: "Process efficiency",
-    plannedValue: 620_000,
-    realizedValue: 180_000,
-    roi: 9,
+    project: "Greenfield Housing Scheme",
+    code: "DEV-002",
+    metric: "Off-plan unit sales (180 units)",
+    plannedValue: 8_200_000_000,
+    realizedValue: 3_280_000_000,
+    roi: 12,
     status: "At Risk",
   },
   {
-    project: "Coastal Highway Phase II",
-    metric: "Toll revenue (annual)",
-    plannedValue: 1_900_000,
-    realizedValue: 0,
-    roi: 0,
+    project: "Atlantic View Residences",
+    code: "DEV-003",
+    metric: "Pre-sales & retail leasing",
+    plannedValue: 22_000_000_000,
+    realizedValue: 6_600_000_000,
+    roi: 8,
     status: "At Risk",
   },
   {
-    project: "Solar Microgrid Rollout",
-    metric: "Diesel cost reduction",
-    plannedValue: 540_000,
-    realizedValue: 340_000,
-    roi: 22,
+    project: "Riverside Commercial Complex",
+    code: "DEV-004",
+    metric: "Commercial lettings revenue",
+    plannedValue: 6_500_000_000,
+    realizedValue: 4_550_000_000,
+    roi: 19,
     status: "On Track",
   },
   {
-    project: "Customer Portal Revamp",
-    metric: "Support cost avoidance",
-    plannedValue: 280_000,
-    realizedValue: 150_000,
-    roi: 14,
+    project: "Woji Estate Extension",
+    code: "DEV-005",
+    metric: "Phase 2 unit sales",
+    plannedValue: 4_800_000_000,
+    realizedValue: 2_880_000_000,
+    roi: 16,
     status: "On Track",
   },
   {
-    project: "Harbor Terminal Upgrade",
-    metric: "Throughput uplift",
-    plannedValue: 2_300_000,
-    realizedValue: 0,
-    roi: 0,
+    project: "Royal Crest Apartments",
+    code: "DEV-006",
+    metric: "Corporate tenant pre-letting",
+    plannedValue: 9_100_000_000,
+    realizedValue: 910_000_000,
+    roi: 4,
     status: "At Risk",
   },
 ];
 
-export interface WorkforceUnit {
-  unit: string;
+export interface ContractorCrew {
+  trade: string;
   allocated: number;
   capacity: number;
 }
 
-/** Headcount allocated vs available capacity by business unit. */
-export const workforce: WorkforceUnit[] = [
-  { unit: "Infrastructure", allocated: 48, capacity: 52 },
-  { unit: "Energy", allocated: 26, capacity: 34 },
-  { unit: "IT", allocated: 39, capacity: 40 },
-  { unit: "Facilities", allocated: 18, capacity: 26 },
-  { unit: "Maritime", allocated: 22, capacity: 20 },
+/** On-site contractor crews allocated vs available capacity. */
+export const contractorCrews: ContractorCrew[] = [
+  { trade: "Structural works", allocated: 142, capacity: 155 },
+  { trade: "MEP / infrastructure", allocated: 98, capacity: 126 },
+  { trade: "Finishing & fit-out", allocated: 88, capacity: 138 },
+  { trade: "Site management", allocated: 36, capacity: 40 },
+  { trade: "Sales & marketing", allocated: 28, capacity: 32 },
 ];
 
 export interface EquipmentRecord {
@@ -96,7 +104,7 @@ export interface EquipmentRecord {
   utilization: number;
 }
 
-export const equipment: EquipmentRecord[] = [
+export const siteEquipment: EquipmentRecord[] = [
   { name: "Heavy plant & cranes", utilization: 91 },
   { name: "Survey & instrumentation", utilization: 64 },
   { name: "Fleet & logistics", utilization: 78 },
@@ -109,13 +117,14 @@ export interface CapacityPoint {
   capacity: number;
 }
 
-export const capacityForecast: CapacityPoint[] = [
-  { month: "Oct", demand: 150, capacity: 172 },
-  { month: "Nov", demand: 168, capacity: 172 },
-  { month: "Dec", demand: 178, capacity: 172 },
-  { month: "Jan", demand: 184, capacity: 172 },
-  { month: "Feb", demand: 175, capacity: 180 },
-  { month: "Mar", demand: 166, capacity: 180 },
+/** Contractor crew demand vs capacity forecast. */
+export const crewCapacityForecast: CapacityPoint[] = [
+  { month: "Oct", demand: 420, capacity: 450 },
+  { month: "Nov", demand: 445, capacity: 450 },
+  { month: "Dec", demand: 468, capacity: 450 },
+  { month: "Jan", demand: 482, capacity: 460 },
+  { month: "Feb", demand: 455, capacity: 480 },
+  { month: "Mar", demand: 438, capacity: 480 },
 ];
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -124,7 +133,8 @@ export const performanceTotals = () => {
   const budget = projects.reduce((s, p) => s + p.budget, 0);
   const spent = projects.reduce((s, p) => s + p.spent, 0);
   const forecast = projects.reduce(
-    (s, p) => s + (p.progress > 0 ? Math.round(p.spent / (p.progress / 100)) : p.budget),
+    (s, p) =>
+      s + (p.progress > 0 ? Math.round(p.spent / (p.progress / 100)) : p.budget),
     0,
   );
   const avgSpi = round2(
@@ -133,12 +143,18 @@ export const performanceTotals = () => {
   const avgCpi = round2(
     projects.reduce((s, p) => s + p.cpi, 0) / projects.length,
   );
-  const avgResource = Math.round(
-    projects.reduce((s, p) => s + p.resourceUtil, 0) / projects.length,
+  const avgContractorCapacity = Math.round(
+    contractorCrews.reduce(
+      (s, c) => s + Math.round((c.allocated / c.capacity) * 100),
+      0,
+    ) / contractorCrews.length,
   );
-  const plannedBenefits = benefits.reduce((s, b) => s + b.plannedValue, 0);
-  const realizedBenefits = benefits.reduce((s, b) => s + b.realizedValue, 0);
-  const benefitsPct = Math.round((realizedBenefits / plannedBenefits) * 100);
+  const plannedSales = salesPerformance.reduce((s, b) => s + b.plannedValue, 0);
+  const realizedSales = salesPerformance.reduce(
+    (s, b) => s + b.realizedValue,
+    0,
+  );
+  const salesPct = Math.round((realizedSales / plannedSales) * 100);
   return {
     budget,
     spent,
@@ -146,9 +162,9 @@ export const performanceTotals = () => {
     costVariance: budget - forecast,
     avgSpi,
     avgCpi,
-    avgResource,
-    plannedBenefits,
-    realizedBenefits,
-    benefitsPct,
+    avgContractorCapacity,
+    plannedSales,
+    realizedSales,
+    salesPct,
   };
 };

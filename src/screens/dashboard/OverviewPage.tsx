@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
   Briefcase,
   CalendarClock,
-  CheckCircle2,
   ChevronRight,
+  Home,
   TriangleAlert,
 } from "lucide-react";
 import {
@@ -32,97 +32,27 @@ import {
   StatusBadge,
 } from "../../components/elements";
 import { chartPalette } from "../../constants";
-import { routes } from "../../router/routes";
-import { cn, formatCurrency } from "../../utils/helpers";
-import type { Status } from "../../utils/types";
+import { projectDetailsPath } from "../../router/routes";
+import { cn, formatCompactCurrency, formatCurrency } from "../../utils/helpers";
+import {
+  attentionItems,
+  contractorCapacity,
+  handovers,
+  maxRisk,
+  metricsByPeriod,
+  milestonesRoute,
+  openRisks,
+  overallCapacity,
+  periodOptions,
+  pipelinePhases,
+  projectsRoute,
+  riskSummary,
+  risksRoute,
+  TOTAL_DEVELOPMENTS,
+  type Period,
+} from "./overviewData";
 
-const periodOptions = [
-  { label: "This month", value: "month" },
-  { label: "This quarter", value: "quarter" },
-  { label: "Year to date", value: "ytd" },
-];
-
-const attentionItems: {
-  project: string;
-  unit: string;
-  reason: string;
-  status: Status;
-  to: string;
-}[] = [
-  {
-    project: "Coastal Rail Extension",
-    unit: "Infrastructure",
-    reason: "Forecast budget overrun +12% vs plan",
-    status: "red",
-    to: routes.PROJECTS,
-  },
-  {
-    project: "Grid Modernization",
-    unit: "Energy",
-    reason: "Critical milestone slipped 3 weeks",
-    status: "red",
-    to: routes.PROJECTS,
-  },
-  {
-    project: "Harbor Terminal Upgrade",
-    unit: "Maritime",
-    reason: "Unmitigated high-severity risk open 21 days",
-    status: "amber",
-    to: routes.RISKS,
-  },
-];
-
-const budgetData = [
-  { month: "Jan", planned: 6.2, actual: 5.9 },
-  { month: "Feb", planned: 12.8, actual: 12.1 },
-  { month: "Mar", planned: 19.5, actual: 18.6 },
-  { month: "Apr", planned: 28.4, actual: 27.0 },
-  { month: "May", planned: 38.1, actual: 34.8 },
-  { month: "Jun", planned: 48.2, actual: 40.5 },
-];
-
-const TOTAL_BUDGET = 48_200_000;
-const SPENT = 40_500_000;
-const UTILIZATION = Math.round((SPENT / TOTAL_BUDGET) * 100);
-
-const TOTAL_PROJECTS = 28;
-const healthData = [
-  { name: "On Track", value: 18, status: "green" as const, color: chartPalette.success },
-  { name: "Attention", value: 7, status: "amber" as const, color: chartPalette.warning },
-  { name: "Critical", value: 3, status: "red" as const, color: chartPalette.danger },
-];
-
-const riskSummary: { label: string; count: number; barClass: string }[] = [
-  { label: "Critical", count: 3, barClass: "bg-danger" },
-  { label: "High", count: 8, barClass: "bg-warning" },
-  { label: "Medium", count: 14, barClass: "bg-info" },
-  { label: "Low", count: 9, barClass: "bg-success" },
-];
-const maxRisk = Math.max(...riskSummary.map((r) => r.count));
-const openRisks = riskSummary.reduce((sum, r) => sum + r.count, 0);
-
-const milestones: {
-  name: string;
-  owner: string;
-  due: string;
-  eta: string;
-  status: Status;
-}[] = [
-  { name: "Phase 1 Handover", owner: "Amara Bello", due: "24 Jun", eta: "in 6 days", status: "green" },
-  { name: "Vendor Onboarding", owner: "Daniel Ajayi", due: "28 Jun", eta: "in 10 days", status: "amber" },
-  { name: "Compliance Review", owner: "Priya Nair", due: "02 Jul", eta: "in 14 days", status: "red" },
-  { name: "Q3 Kickoff", owner: "Marcus Cole", due: "08 Jul", eta: "in 20 days", status: "green" },
-];
-
-const resourceUtil: { unit: string; value: number }[] = [
-  { unit: "Engineering", value: 92 },
-  { unit: "Delivery", value: 78 },
-  { unit: "Advisory", value: 64 },
-  { unit: "Operations", value: 85 },
-];
-const overallUtil = Math.round(
-  resourceUtil.reduce((sum, r) => sum + r.value, 0) / resourceUtil.length,
-);
+const BILLION = 1_000_000_000;
 
 const tooltipStyle = {
   background: "var(--color-surface)",
@@ -130,6 +60,8 @@ const tooltipStyle = {
   borderRadius: 8,
   color: "var(--color-foreground)",
 };
+
+const statusOrder = { red: 0, amber: 1, green: 2 } as const;
 
 function CardLink({ to, label }: { to: string; label: string }) {
   return (
@@ -144,13 +76,27 @@ function CardLink({ to, label }: { to: string; label: string }) {
 }
 
 function OverviewPage() {
-  const [period, setPeriod] = useState(periodOptions[1]);
+  const [period, setPeriod] = useState(periodOptions[2]);
+  const metrics = metricsByPeriod[period.value as Period];
+
+  const sortedAttention = useMemo(
+    () =>
+      [...attentionItems].sort(
+        (a, b) => statusOrder[a.status] - statusOrder[b.status],
+      ),
+    [],
+  );
+
+  const varianceTone =
+    metrics.varianceLabel === "Under plan" ? "text-success" : "text-danger";
+  const varianceBadge =
+    metrics.varianceLabel === "Under plan" ? "success" : "danger";
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Executive Overview"
-        subtitle={`Organization-wide portfolio health · as of ${moment().format("DD MMM YYYY, h:mm A")}`}
+        title="Portfolio Overview"
+        subtitle={`Property development portfolio · Rivers State & national pipeline · as of ${moment().format("DD MMM YYYY, h:mm A")}`}
         action={
           <div className="w-44">
             <Select
@@ -165,7 +111,7 @@ function OverviewPage() {
       />
 
       <section
-        aria-label="Items needing attention"
+        aria-label="Developments needing attention"
         className="rounded-xl border border-border bg-surface shadow-sm"
       >
         <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3">
@@ -176,12 +122,12 @@ function OverviewPage() {
             <h2 className="text-sm font-semibold text-foreground">
               Needs attention
             </h2>
-            <Badge variant="danger">{attentionItems.length}</Badge>
+            <Badge variant="danger">{sortedAttention.length}</Badge>
           </div>
-          <CardLink to={routes.RISKS} label="View all" />
+          <CardLink to={risksRoute} label="View all risks" />
         </div>
         <ul className="divide-y divide-border">
-          {attentionItems.map((item) => (
+          {sortedAttention.map((item) => (
             <li key={item.project}>
               <Link
                 to={item.to}
@@ -192,7 +138,10 @@ function OverviewPage() {
                   <p className="truncate text-sm font-medium text-foreground">
                     {item.project}
                     <span className="ml-2 text-xs font-normal text-muted-foreground">
-                      {item.unit}
+                      {item.type}
+                    </span>
+                    <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                      · {item.location}
                     </span>
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
@@ -208,42 +157,49 @@ function OverviewPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Active Projects"
-          value={28}
+          label="Active Developments"
+          value={metrics.activeDevelopments}
           icon={Briefcase}
           tone="primary"
-          trend={{ value: "+3 this quarter", positive: true }}
-          to={routes.PROJECTS}
+          trend={{ value: metrics.activeTrend, positive: true }}
+          to={projectsRoute}
         />
         <StatCard
-          label="Completed"
-          value={142}
-          icon={CheckCircle2}
+          label="Units Delivered"
+          value={metrics.unitsDelivered.toLocaleString("en-NG")}
+          icon={Home}
           tone="success"
-          trend={{ value: "+12 YTD", positive: true }}
-          to={routes.PROJECTS}
+          trend={{ value: metrics.unitsTrend, positive: true }}
+          to={projectsRoute}
         />
         <StatCard
-          label="At Risk"
-          value={3}
+          label="Developments at Risk"
+          value={metrics.atRisk}
           icon={TriangleAlert}
           tone="danger"
-          trend={{ value: "+1 this week", positive: false }}
-          to={routes.RISKS}
+          {...(metrics.atRiskTrend === "No change"
+            ? { hint: metrics.atRiskTrend }
+            : {
+                trend: {
+                  value: metrics.atRiskTrend,
+                  positive: !metrics.atRiskTrend.startsWith("+"),
+                },
+              })}
+          to={risksRoute}
         />
         <StatCard
-          label="Upcoming Milestones"
-          value={9}
+          label="Upcoming Handovers"
+          value={metrics.upcomingHandovers}
           icon={CalendarClock}
           tone="info"
           hint="Next 30 days"
-          to={routes.PROJECTS}
+          to={milestonesRoute}
         />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card
-          title="Financial Snapshot"
+          title="Development Cost Performance"
           className="lg:col-span-2"
           action={
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -252,7 +208,7 @@ function OverviewPage() {
                   className="h-2.5 w-2.5 rounded-sm"
                   style={{ backgroundColor: chartPalette.primarySoft }}
                 />
-                Planned
+                Approved
               </span>
               <span className="flex items-center gap-1.5">
                 <span
@@ -264,31 +220,36 @@ function OverviewPage() {
             </div>
           }
         >
-          <div className="grid grid-cols-3 gap-4 border-b border-border pb-4">
+          <div className="grid grid-cols-1 gap-4 border-b border-border pb-4 sm:grid-cols-3">
             <div>
-              <p className="text-xs text-muted-foreground">Total budget</p>
+              <p className="text-xs text-muted-foreground">Total approved budget</p>
               <p className="mt-1 text-lg font-semibold text-foreground">
-                {formatCurrency(TOTAL_BUDGET)}
+                {formatCurrency(metrics.totalBudget)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Spent</p>
+              <p className="text-xs text-muted-foreground">Spent to date</p>
               <p className="mt-1 text-lg font-semibold text-foreground">
-                {formatCurrency(SPENT)}
+                {formatCurrency(metrics.spent)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Variance</p>
-              <p className="mt-1 flex items-center gap-2 text-lg font-semibold text-success">
-                3.2%
-                <Badge variant="success">Under plan</Badge>
+              <p className="text-xs text-muted-foreground">Variance vs plan</p>
+              <p
+                className={cn(
+                  "mt-1 flex flex-wrap items-center gap-2 text-lg font-semibold",
+                  varianceTone,
+                )}
+              >
+                {metrics.variancePct}%
+                <Badge variant={varianceBadge}>{metrics.varianceLabel}</Badge>
               </p>
             </div>
           </div>
 
           <div className="pt-4">
             <ResponsiveContainer width="100%" height={232}>
-              <BarChart data={budgetData}>
+              <BarChart data={metrics.budgetChart}>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   vertical={false}
@@ -304,22 +265,25 @@ function OverviewPage() {
                   fontSize={12}
                   stroke={chartPalette.axis}
                   tickLine={false}
-                  tickFormatter={(v) => `$${v}M`}
+                  tickFormatter={(v) => formatCompactCurrency(v * BILLION)}
                 />
                 <Tooltip
                   contentStyle={tooltipStyle}
                   cursor={{ opacity: 0.1 }}
-                  formatter={(v: number) => [`$${v}M`, ""]}
+                  formatter={(v: number, name: string) => [
+                    formatCompactCurrency(v * BILLION),
+                    name === "planned" ? "Approved" : "Actual",
+                  ]}
                 />
                 <Bar
                   dataKey="planned"
-                  name="Planned"
+                  name="planned"
                   fill={chartPalette.primarySoft}
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
                   dataKey="actual"
-                  name="Actual"
+                  name="actual"
                   fill={chartPalette.primary}
                   radius={[4, 4, 0, 0]}
                 />
@@ -329,28 +293,33 @@ function OverviewPage() {
 
           <div className="mt-4 border-t border-border pt-4">
             <div className="mb-1.5 flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Budget utilization</span>
+              <span className="text-muted-foreground">
+                Budget utilization across active developments
+              </span>
               <span className="font-medium text-foreground">
-                {UTILIZATION}%
+                {metrics.utilization}%
               </span>
             </div>
-            <ProgressBar value={UTILIZATION} />
+            <ProgressBar value={metrics.utilization} />
           </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Source: PMO · Updated {moment().format("DD MMM YYYY")}
+          </p>
         </Card>
 
-        <Card title="Portfolio Health">
+        <Card title="Development Pipeline">
           <div className="relative">
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
-                  data={healthData}
+                  data={pipelinePhases}
                   dataKey="value"
                   nameKey="name"
                   innerRadius={62}
                   outerRadius={90}
                   paddingAngle={2}
                 >
-                  {healthData.map((entry) => (
+                  {pipelinePhases.map((entry) => (
                     <Cell key={entry.name} fill={entry.color} />
                   ))}
                 </Pie>
@@ -359,13 +328,13 @@ function OverviewPage() {
             </ResponsiveContainer>
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
               <span className="text-2xl font-semibold text-foreground">
-                {TOTAL_PROJECTS}
+                {TOTAL_DEVELOPMENTS}
               </span>
-              <span className="text-xs text-muted-foreground">Projects</span>
+              <span className="text-xs text-muted-foreground">Developments</span>
             </div>
           </div>
           <div className="mt-3 flex flex-col gap-2.5">
-            {healthData.map((item) => (
+            {pipelinePhases.map((item) => (
               <div
                 key={item.name}
                 className="flex items-center justify-between text-sm"
@@ -380,7 +349,7 @@ function OverviewPage() {
                 <span className="text-foreground">
                   <span className="font-medium">{item.value}</span>
                   <span className="ml-1.5 text-xs text-muted-foreground">
-                    {Math.round((item.value / TOTAL_PROJECTS) * 100)}%
+                    {Math.round((item.value / TOTAL_DEVELOPMENTS) * 100)}%
                   </span>
                 </span>
               </div>
@@ -391,8 +360,8 @@ function OverviewPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card
-          title="Risk Summary"
-          action={<CardLink to={routes.RISKS} label="Details" />}
+          title="Site Risk Overview"
+          action={<CardLink to={risksRoute} label="Details" />}
         >
           <div className="flex flex-col gap-3">
             {riskSummary.map((risk) => (
@@ -414,50 +383,62 @@ function OverviewPage() {
           </div>
           <p className="mt-4 border-t border-border pt-3 text-xs text-muted-foreground">
             <span className="font-medium text-foreground">{openRisks}</span> open
-            · <span className="font-medium text-foreground">18</span> mitigated
-            this quarter
+            site risks ·{" "}
+            <span className="font-medium text-foreground">
+              {metrics.mitigatedRisks}
+            </span>{" "}
+            mitigated {period.label.toLowerCase()}
           </p>
         </Card>
 
         <Card
-          title="Milestone Tracker"
+          title="Upcoming Handovers"
           className="lg:col-span-2"
-          action={<CardLink to={routes.PROJECTS} label="All milestones" />}
+          action={<CardLink to={milestonesRoute} label="All handovers" />}
         >
           <div className="divide-y divide-border">
-            {milestones.map((m) => (
-              <div
-                key={m.name}
-                className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
+            {handovers.map((h) => (
+              <Link
+                key={`${h.name}-${h.due}`}
+                to={projectDetailsPath(h.projectId)}
+                className="group flex items-center justify-between gap-3 py-3 transition-colors first:pt-0 last:pb-0 hover:bg-surface-muted/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/40"
               >
-                <div className="flex min-w-0 items-center gap-3">
-                  <Avatar name={m.owner} size="sm" />
+                <div className="flex min-w-0 items-center gap-3 px-1">
+                  <Avatar name={h.owner} size="sm" />
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-foreground">
-                      {m.name}
+                      {h.name}
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">
+                        {h.units} units
+                      </span>
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {m.owner} · Due {m.due} · {m.eta}
+                      {h.project} · {h.location} · {h.phase}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {h.owner} · Due {h.due} · {h.eta}
                     </p>
                   </div>
                 </div>
-                <StatusBadge status={m.status} className="shrink-0" />
-              </div>
+                <StatusBadge status={h.status} className="shrink-0" />
+              </Link>
             ))}
           </div>
         </Card>
       </div>
 
-      <Card title="Resource Utilization">
+      <Card title="Contractor Capacity">
         <div className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
-          {resourceUtil.map((r) => {
-            const over = r.value >= 90;
+          {contractorCapacity.map((r) => {
+            const constrained = r.value >= 90;
             return (
-              <div key={r.unit}>
+              <div key={r.trade}>
                 <div className="mb-1.5 flex items-center justify-between text-sm">
                   <span className="flex items-center gap-2 text-muted-foreground">
-                    {r.unit}
-                    {over && <Badge variant="warning">Over-allocated</Badge>}
+                    {r.trade}
+                    {constrained && (
+                      <Badge variant="warning">Capacity constrained</Badge>
+                    )}
                   </span>
                   <span className="font-medium text-foreground">{r.value}%</span>
                 </div>
@@ -465,7 +446,7 @@ function OverviewPage() {
                   <div
                     className={cn(
                       "h-full rounded-full motion-safe:transition-[width]",
-                      over ? "bg-warning" : "bg-primary",
+                      constrained ? "bg-warning" : "bg-primary",
                     )}
                     style={{ width: `${r.value}%` }}
                   />
@@ -475,8 +456,8 @@ function OverviewPage() {
           })}
         </div>
         <p className="mt-4 border-t border-border pt-3 text-xs text-muted-foreground">
-          Average utilization across business units:{" "}
-          <span className="font-medium text-foreground">{overallUtil}%</span>
+          Average capacity across trades:{" "}
+          <span className="font-medium text-foreground">{overallCapacity}%</span>
         </p>
       </Card>
     </div>

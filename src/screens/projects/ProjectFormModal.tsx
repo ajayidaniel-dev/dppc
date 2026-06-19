@@ -8,7 +8,7 @@ import {
   Modal,
   Select,
 } from "../../components/elements";
-import { PROJECT_PHASES, projectImage, VERIFIED_PHOTOS, type Project } from "./projectsData";
+import { PROJECT_PHASES, projectImage, VERIFIED_PHOTOS, DEVELOPMENT_TYPES, type Project } from "./projectsData";
 import type { Status } from "../../utils/types";
 
 interface ProjectFormModalProps {
@@ -18,14 +18,7 @@ interface ProjectFormModalProps {
   nextId: number;
 }
 
-const businessUnitOptions = [
-  "Infrastructure",
-  "Energy",
-  "IT",
-  "Facilities",
-  "Maritime",
-  "R&D",
-].map((u) => ({ label: u, value: u }));
+const businessUnitOptions = DEVELOPMENT_TYPES.map((u) => ({ label: u, value: u }));
 
 const phaseOptions = PROJECT_PHASES.map((p) => ({ label: p, value: p }));
 
@@ -108,7 +101,7 @@ function ProjectFormModal({
 
     const project: Project = {
       id: nextId,
-      code: code.trim() || `PRJ-${String(nextId).padStart(3, "0")}`,
+      code: code.trim() || `DEV-${String(nextId).padStart(3, "0")}`,
       name: name.trim(),
       description: description.trim() || "—",
       manager: manager.trim(),
@@ -129,7 +122,7 @@ function ProjectFormModal({
       strategicObjective: objective.trim() || "—",
       businessDriver: "—",
       expectedBenefits: "—",
-      coverImage: projectImage(VERIFIED_PHOTOS.office),
+      coverImage: projectImage(VERIFIED_PHOTOS.constructionSite),
       media: [],
       milestones: [],
       risks: [],
@@ -148,7 +141,7 @@ function ProjectFormModal({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="New project"
+      title="New development"
       size="lg"
       footer={
         <>
@@ -175,9 +168,9 @@ function ProjectFormModal({
           label="Project code"
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          placeholder={`PRJ-${String(nextId).padStart(3, "0")}`}
+          placeholder={`DEV-${String(nextId).padStart(3, "0")}`}
         />
-        <Field label="Business unit">
+        <Field label="Development type">
           <Select
             options={businessUnitOptions}
             value={businessUnit}

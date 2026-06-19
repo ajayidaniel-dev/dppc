@@ -27,7 +27,7 @@ function Tabs({ tabs, value, onChange, className }: TabsProps) {
             aria-selected={active}
             onClick={() => onChange(tab.id)}
             className={cn(
-              "-mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
+              "-mb-px shrink-0 whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
               active
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"

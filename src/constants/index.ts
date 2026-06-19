@@ -1,7 +1,7 @@
 import {
   LayoutDashboard,
   FolderKanban,
-  Briefcase,
+  HardHat,
   Flag,
   Gauge,
   TriangleAlert,
@@ -11,7 +11,6 @@ import {
   Trophy,
   Users,
   Building2,
-  Rocket,
   ShieldCheck,
   Landmark,
   type LucideIcon,
@@ -43,32 +42,59 @@ export interface NavSection {
 }
 
 /**
- * Grouped navigation keeps the rail short: one flat entry plus three
- * collapsible groups that map to the PRD's 12 main-nav destinations.
+ * Grouped navigation for the real estate development portfolio portal.
  */
 export const navSections: NavSection[] = [
   {
     items: [
-      { label: "Overview", path: routes.DASHBOARD, icon: LayoutDashboard },
+      {
+        label: "Portfolio Overview",
+        path: routes.DASHBOARD,
+        icon: LayoutDashboard,
+      },
     ],
   },
   {
-    label: "Delivery",
-    icon: Rocket,
+    label: "Development",
+    icon: HardHat,
     items: [
-      { label: "Portfolio", path: routes.PORTFOLIO, icon: FolderKanban },
-      { label: "Projects", path: routes.PROJECTS, icon: Briefcase },
-      { label: "Milestones", path: routes.MILESTONES, icon: Flag },
-      { label: "Performance", path: routes.PERFORMANCE, icon: Gauge },
+      {
+        label: "Development Portfolio",
+        path: routes.PORTFOLIO,
+        icon: FolderKanban,
+      },
+      { label: "Developments", path: routes.PROJECTS, icon: Building2 },
+      {
+        label: "Construction Milestones",
+        path: routes.MILESTONES,
+        icon: Flag,
+      },
+      {
+        label: "Development Performance",
+        path: routes.PERFORMANCE,
+        icon: Gauge,
+      },
     ],
   },
   {
     label: "Governance",
     icon: ShieldCheck,
     items: [
-      { label: "Risks & Issues", path: routes.RISKS, icon: TriangleAlert },
-      { label: "Reports", path: routes.REPORTS, icon: FileBarChart },
-      { label: "Knowledge", path: routes.KNOWLEDGE, icon: BookOpen },
+      {
+        label: "Site Risks & Issues",
+        path: routes.RISKS,
+        icon: TriangleAlert,
+      },
+      {
+        label: "Reporting Center",
+        path: routes.REPORTS,
+        icon: FileBarChart,
+      },
+      {
+        label: "Knowledge Repository",
+        path: routes.KNOWLEDGE,
+        icon: BookOpen,
+      },
     ],
   },
   {
@@ -76,17 +102,29 @@ export const navSections: NavSection[] = [
     icon: Landmark,
     items: [
       { label: "Stakeholders", path: routes.STAKEHOLDERS, icon: Users },
-      { label: "Highlights", path: routes.HIGHLIGHTS, icon: Trophy },
-      { label: "Media Gallery", path: routes.MEDIA, icon: Images },
-      { label: "Company Profile", path: routes.COMPANY, icon: Building2 },
+      {
+        label: "Success Stories",
+        path: routes.HIGHLIGHTS,
+        icon: Trophy,
+      },
+      {
+        label: "Media Gallery",
+        path: routes.MEDIA,
+        icon: Images,
+      },
+      {
+        label: "Corporate Profile",
+        path: routes.COMPANY,
+        icon: Building2,
+      },
     ],
   },
 ];
 
 export const quickActions: SelectOption[] = [
-  { label: "New Project", value: "new-project" },
-  { label: "New Report", value: "new-report" },
-  { label: "Add Risk", value: "add-risk" },
+  { label: "New development", value: "new-project" },
+  { label: "Generate report", value: "new-report" },
+  { label: "Log site risk", value: "add-risk" },
 ];
 
 /**

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import moment from "moment";
 import {
   Area,
   AreaChart,
@@ -12,7 +13,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Banknote, Gauge, Target, TrendingUp } from "lucide-react";
+import { Banknote, Gauge, HardHat, Target } from "lucide-react";
 import {
   Badge,
   Card,
@@ -24,23 +25,27 @@ import {
   type BadgeVariant,
   type TabItem,
 } from "../../components/elements";
-import { cn, formatCurrency } from "../../utils/helpers";
+import {
+  cn,
+  formatCompactCurrency,
+  formatCurrency,
+} from "../../utils/helpers";
 import { chartPalette } from "../../constants";
 import { projects } from "../projects/projectsData";
 import {
-  benefits,
-  capacityForecast,
-  equipment,
+  contractorCrews,
+  crewCapacityForecast,
   performanceTotals,
+  salesPerformance,
   scheduleTrend,
-  workforce,
+  siteEquipment,
 } from "./performanceData";
 
 const tabs: TabItem[] = [
-  { id: "schedule", label: "Schedule" },
-  { id: "financial", label: "Financial" },
-  { id: "resource", label: "Resource" },
-  { id: "benefits", label: "Benefits" },
+  { id: "schedule", label: "Construction Progress" },
+  { id: "financial", label: "Development Cost" },
+  { id: "resource", label: "Site Capacity" },
+  { id: "benefits", label: "Sales Performance" },
 ];
 
 const tooltipStyle = {
@@ -60,7 +65,7 @@ function PerformancePage() {
   const financialData = useMemo(
     () =>
       projects.map((p) => ({
-        name: p.code,
+        name: p.code.replace("DEV-", "D"),
         Budget: p.budget,
         Spent: p.spent,
         Forecast:
@@ -69,10 +74,10 @@ function PerformancePage() {
     [],
   );
 
-  const benefitsChart = useMemo(
+  const salesChart = useMemo(
     () =>
-      benefits.map((b) => ({
-        name: b.project.split(" ")[0],
+      salesPerformance.map((b) => ({
+        name: b.code.replace("DEV-", "D"),
         Planned: b.plannedValue,
         Realized: b.realizedValue,
       })),
@@ -82,38 +87,38 @@ function PerformancePage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Performance Center"
-        subtitle="Schedule, cost, resource, and benefits performance across the portfolio."
+        title="Development Performance"
+        subtitle="Construction progress, development cost, site capacity, and property sales across the portfolio."
       />
 
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <StatCard
-          label="Schedule (SPI)"
+          label="Construction Schedule (SPI)"
           value={t.avgSpi.toFixed(2)}
           icon={Gauge}
           tone={t.avgSpi >= 1 ? "success" : "warning"}
           hint={t.avgSpi >= 1 ? "Ahead of plan" : "Behind plan"}
         />
         <StatCard
-          label="Cost (CPI)"
+          label="Development Cost (CPI)"
           value={t.avgCpi.toFixed(2)}
           icon={Banknote}
           tone={t.avgCpi >= 1 ? "success" : "warning"}
           hint={t.avgCpi >= 1 ? "Under budget" : "Over budget"}
         />
         <StatCard
-          label="Resource Utilization"
-          value={`${t.avgResource}%`}
-          icon={TrendingUp}
-          tone={t.avgResource > 90 ? "danger" : "info"}
-          hint="Portfolio average"
+          label="Contractor Capacity"
+          value={`${t.avgContractorCapacity}%`}
+          icon={HardHat}
+          tone={t.avgContractorCapacity > 90 ? "danger" : "info"}
+          hint="Average across trades"
         />
         <StatCard
-          label="Benefits Realized"
-          value={`${t.benefitsPct}%`}
+          label="Sales Realized"
+          value={`${t.salesPct}%`}
           icon={Target}
-          tone={t.benefitsPct >= 50 ? "success" : "warning"}
-          hint={`${formatCurrency(t.realizedBenefits)} of ${formatCurrency(t.plannedBenefits)}`}
+          tone={t.salesPct >= 50 ? "success" : "warning"}
+          hint={`${formatCompactCurrency(t.realizedSales)} of ${formatCompactCurrency(t.plannedSales)}`}
         />
       </div>
 
@@ -122,22 +127,45 @@ function PerformancePage() {
       {tab === "schedule" && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <ChartCard
-            title="Planned vs Actual Progress"
+            title="Construction Progress vs Plan"
             className="lg:col-span-2"
           >
             <AreaChart data={scheduleTrend}>
               <defs>
                 <linearGradient id="plannedFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={chartPalette.blue} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={chartPalette.blue} stopOpacity={0} />
+                  <stop
+                    offset="5%"
+                    stopColor={chartPalette.blue}
+                    stopOpacity={0.3}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor={chartPalette.blue}
+                    stopOpacity={0}
+                  />
                 </linearGradient>
                 <linearGradient id="actualFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={chartPalette.primary} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={chartPalette.primary} stopOpacity={0} />
+                  <stop
+                    offset="5%"
+                    stopColor={chartPalette.primary}
+                    stopOpacity={0.3}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor={chartPalette.primary}
+                    stopOpacity={0}
+                  />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke={chartPalette.grid} />
-              <XAxis dataKey="month" stroke={chartPalette.axis} fontSize={12} />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke={chartPalette.grid}
+              />
+              <XAxis
+                dataKey="month"
+                stroke={chartPalette.axis}
+                fontSize={12}
+              />
               <YAxis stroke={chartPalette.axis} fontSize={12} unit="%" />
               <Tooltip contentStyle={tooltipStyle} />
               <Legend />
@@ -160,7 +188,7 @@ function PerformancePage() {
             </AreaChart>
           </ChartCard>
 
-          <Card title="Schedule Index by Project">
+          <Card title="Schedule Index by Development">
             <div className="flex flex-col gap-3">
               {projects.map((p) => (
                 <div key={p.id} className="flex items-center gap-3">
@@ -168,9 +196,13 @@ function PerformancePage() {
                     <p className="truncate text-sm font-medium text-foreground">
                       {p.name}
                     </p>
-                    <p className="text-xs text-muted-foreground">{p.code}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {p.code} · {p.location}
+                    </p>
                   </div>
-                  <Badge variant={indexTone(p.spi)}>SPI {p.spi.toFixed(2)}</Badge>
+                  <Badge variant={indexTone(p.spi)}>
+                    SPI {p.spi.toFixed(2)}
+                  </Badge>
                 </div>
               ))}
             </div>
@@ -181,48 +213,72 @@ function PerformancePage() {
       {tab === "financial" && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <ChartCard
-            title="Budget vs Spent vs Forecast"
+            title="Development Cost — Budget vs Spent vs Forecast"
             className="lg:col-span-2"
           >
             <BarChart data={financialData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={chartPalette.grid} />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke={chartPalette.grid}
+              />
               <XAxis dataKey="name" stroke={chartPalette.axis} fontSize={12} />
               <YAxis
                 stroke={chartPalette.axis}
                 fontSize={12}
-                tickFormatter={(v) => `${v / 1_000_000}M`}
+                tickFormatter={(v) => formatCompactCurrency(v)}
               />
               <Tooltip
                 contentStyle={tooltipStyle}
                 formatter={(v: number) => formatCurrency(v)}
               />
               <Legend />
-              <Bar dataKey="Budget" fill={chartPalette.blue} radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Spent" fill={chartPalette.primary} radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Forecast" fill={chartPalette.amber} radius={[4, 4, 0, 0]} />
+              <Bar
+                dataKey="Budget"
+                name="Approved budget"
+                fill={chartPalette.blue}
+                radius={[4, 4, 0, 0]}
+              />
+              <Bar
+                dataKey="Spent"
+                name="Spent to date"
+                fill={chartPalette.primary}
+                radius={[4, 4, 0, 0]}
+              />
+              <Bar
+                dataKey="Forecast"
+                name="Forecast at completion"
+                fill={chartPalette.amber}
+                radius={[4, 4, 0, 0]}
+              />
             </BarChart>
           </ChartCard>
 
-          <Card title="Cost Summary">
+          <Card title="Development Cost Summary">
             <dl className="flex flex-col divide-y divide-border">
-              <SummaryRow label="Approved budget" value={formatCurrency(t.budget)} />
-              <SummaryRow label="Actual spend" value={formatCurrency(t.spent)} />
+              <SummaryRow
+                label="Total approved budget"
+                value={formatCompactCurrency(t.budget)}
+              />
+              <SummaryRow
+                label="Spent to date"
+                value={formatCompactCurrency(t.spent)}
+              />
               <SummaryRow
                 label="Forecast at completion"
-                value={formatCurrency(t.forecast)}
+                value={formatCompactCurrency(t.forecast)}
               />
               <div className="flex items-center justify-between py-3">
                 <dt className="text-sm text-muted-foreground">Cost variance</dt>
                 <dd>
                   <Badge variant={t.costVariance >= 0 ? "success" : "danger"}>
                     {t.costVariance >= 0 ? "+" : "−"}
-                    {formatCurrency(Math.abs(t.costVariance))}
+                    {formatCompactCurrency(Math.abs(t.costVariance))}
                   </Badge>
                 </dd>
               </div>
             </dl>
             <p className="mt-3 text-xs text-muted-foreground">
-              Forecast extrapolated from spend-to-date against reported progress.
+              Forecast extrapolated from spend-to-date against site progress.
             </p>
           </Card>
         </div>
@@ -230,9 +286,15 @@ function PerformancePage() {
 
       {tab === "resource" && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <ChartCard title="Capacity Forecast" className="lg:col-span-2">
-            <LineChart data={capacityForecast}>
-              <CartesianGrid strokeDasharray="3 3" stroke={chartPalette.grid} />
+          <ChartCard
+            title="Contractor Crew Demand Forecast"
+            className="lg:col-span-2"
+          >
+            <LineChart data={crewCapacityForecast}>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke={chartPalette.grid}
+              />
               <XAxis dataKey="month" stroke={chartPalette.axis} fontSize={12} />
               <YAxis stroke={chartPalette.axis} fontSize={12} />
               <Tooltip contentStyle={tooltipStyle} />
@@ -240,7 +302,7 @@ function PerformancePage() {
               <Line
                 type="monotone"
                 dataKey="demand"
-                name="Demand (FTE)"
+                name="Demand (crews)"
                 stroke={chartPalette.primary}
                 strokeWidth={2}
                 dot={false}
@@ -248,7 +310,7 @@ function PerformancePage() {
               <Line
                 type="monotone"
                 dataKey="capacity"
-                name="Capacity (FTE)"
+                name="Capacity (crews)"
                 stroke={chartPalette.success}
                 strokeWidth={2}
                 strokeDasharray="5 5"
@@ -257,45 +319,62 @@ function PerformancePage() {
             </LineChart>
           </ChartCard>
 
-          <Card title="Workforce Allocation">
+          <Card title="Contractor Crew Allocation">
             <div className="flex flex-col gap-3">
-              {workforce.map((w) => {
+              {contractorCrews.map((w) => {
                 const pct = Math.round((w.allocated / w.capacity) * 100);
                 const over = w.allocated > w.capacity;
                 return (
-                  <div key={w.unit}>
+                  <div key={w.trade}>
                     <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className="text-foreground">{w.unit}</span>
+                      <span className="flex items-center gap-2 text-foreground">
+                        {w.trade}
+                        {over && (
+                          <Badge variant="warning" className="text-[10px]">
+                            Constrained
+                          </Badge>
+                        )}
+                      </span>
                       <span
                         className={cn(
                           "text-xs",
                           over ? "text-danger" : "text-muted-foreground",
                         )}
                       >
-                        {w.allocated}/{w.capacity} {over && "· over"}
+                        {w.allocated}/{w.capacity} crews
                       </span>
                     </div>
-                    <ProgressBar value={pct} />
+                    <ProgressBar value={Math.min(pct, 100)} />
                   </div>
                 );
               })}
             </div>
           </Card>
 
-          <Card title="Equipment Utilization" className="lg:col-span-3">
+          <Card title="Site Equipment Utilization" className="lg:col-span-3">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {equipment.map((e) => (
-                <div
-                  key={e.name}
-                  className="rounded-lg border border-border p-4"
-                >
-                  <p className="text-sm text-muted-foreground">{e.name}</p>
-                  <p className="mb-2 mt-1 text-xl font-semibold text-foreground">
-                    {e.utilization}%
-                  </p>
-                  <ProgressBar value={e.utilization} />
-                </div>
-              ))}
+              {siteEquipment.map((e) => {
+                const high = e.utilization >= 90;
+                return (
+                  <div
+                    key={e.name}
+                    className="rounded-lg border border-border p-4"
+                  >
+                    <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                      {e.name}
+                      {high && (
+                        <Badge variant="warning" className="text-[10px]">
+                          High use
+                        </Badge>
+                      )}
+                    </p>
+                    <p className="mb-2 mt-1 text-xl font-semibold text-foreground">
+                      {e.utilization}%
+                    </p>
+                    <ProgressBar value={e.utilization} />
+                  </div>
+                );
+              })}
             </div>
           </Card>
         </div>
@@ -304,30 +383,43 @@ function PerformancePage() {
       {tab === "benefits" && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <ChartCard
-            title="Planned vs Realized Benefits"
+            title="Planned vs Realized Sales"
             className="lg:col-span-2"
           >
-            <BarChart data={benefitsChart}>
-              <CartesianGrid strokeDasharray="3 3" stroke={chartPalette.grid} />
+            <BarChart data={salesChart}>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke={chartPalette.grid}
+              />
               <XAxis dataKey="name" stroke={chartPalette.axis} fontSize={12} />
               <YAxis
                 stroke={chartPalette.axis}
                 fontSize={12}
-                tickFormatter={(v) => `${v / 1_000_000}M`}
+                tickFormatter={(v) => formatCompactCurrency(v)}
               />
               <Tooltip
                 contentStyle={tooltipStyle}
                 formatter={(v: number) => formatCurrency(v)}
               />
               <Legend />
-              <Bar dataKey="Planned" fill={chartPalette.violet} radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Realized" fill={chartPalette.teal} radius={[4, 4, 0, 0]} />
+              <Bar
+                dataKey="Planned"
+                name="Planned sales"
+                fill={chartPalette.violet}
+                radius={[4, 4, 0, 0]}
+              />
+              <Bar
+                dataKey="Realized"
+                name="Realized sales"
+                fill={chartPalette.teal}
+                radius={[4, 4, 0, 0]}
+              />
             </BarChart>
           </ChartCard>
 
-          <Card title="Value Realization & ROI">
+          <Card title="Property Sales & Investment Returns">
             <div className="flex flex-col gap-4">
-              {benefits.map((b) => {
+              {salesPerformance.map((b) => {
                 const pct =
                   b.plannedValue > 0
                     ? Math.round((b.realizedValue / b.plannedValue) * 100)
@@ -352,7 +444,7 @@ function PerformancePage() {
                               : "info"
                         }
                       >
-                        ROI {b.roi}%
+                        {b.roi}% return
                       </Badge>
                     </div>
                     <div className="mt-1.5">
@@ -365,6 +457,10 @@ function PerformancePage() {
           </Card>
         </div>
       )}
+
+      <p className="text-xs text-muted-foreground">
+        Source: PMO · Updated {moment().format("DD MMM YYYY")}
+      </p>
     </div>
   );
 }
