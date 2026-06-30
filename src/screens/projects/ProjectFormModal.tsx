@@ -104,6 +104,25 @@ function ProjectFormModal({
       code: code.trim() || `DEV-${String(nextId).padStart(3, "0")}`,
       name: name.trim(),
       description: description.trim() || "—",
+      summary: {
+        narrative:
+          description.trim() ||
+          `${name.trim()} is a new development at ${location.trim() || "TBC"}. Full project summary to be added once scope and specifications are confirmed.`,
+        specifications: [
+          { label: "Unit mix", value: "To be confirmed" },
+          { label: "Plot size", value: "To be confirmed" },
+          { label: "Built-up area", value: "To be confirmed" },
+          { label: "Kitchen", value: "To be confirmed" },
+          { label: "Flooring", value: "To be confirmed" },
+          { label: "Roofing", value: "To be confirmed" },
+          {
+            label: "Lead engineer",
+            value: manager.trim()
+              ? `Eng. ${manager.trim()} — Project Manager`
+              : "To be assigned",
+          },
+        ],
+      },
       manager: manager.trim(),
       sponsor: sponsor.trim() || "—",
       client: client.trim() || "—",

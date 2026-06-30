@@ -182,6 +182,27 @@ function ProjectDetailsPage() {
         </div>
       </div>
 
+      <Card title="Project Summary">
+        <p className="text-sm leading-relaxed text-foreground">
+          {project.summary.narrative}
+        </p>
+        <div className="mt-5 grid grid-cols-1 gap-3 border-t border-border pt-5 sm:grid-cols-2 lg:grid-cols-4">
+          {project.summary.specifications.map((spec) => (
+            <div
+              key={spec.label}
+              className="rounded-lg border border-border bg-surface-muted/50 px-3.5 py-3"
+            >
+              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {spec.label}
+              </dt>
+              <dd className="mt-1 text-sm font-medium leading-snug text-foreground">
+                {spec.value}
+              </dd>
+            </div>
+          ))}
+        </div>
+      </Card>
+
       <div className="relative overflow-hidden rounded-xl border border-border">
         <img
           src={project.coverImage}
